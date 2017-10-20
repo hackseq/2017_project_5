@@ -1,0 +1,303 @@
+---
+title: "Hackseq2017_Proj5"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Load required R packages
+
+```
+library(animation)
+library(TCGAbiolinks)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(xlsx)
+library(hpar)
+```
+
+
+genes<-c("PAX1", "PAX2", "PAX6")
+#gene<-"LEPR"
+
+##if need to run for a subset of candidate genes
+#candy<-candy[64:65,]
+
+for (gene in genes)
+{
+  wb<-createWorkbook()
+  cs<-CellStyle(wb) + Font(wb, isBold = TRUE) + Border() + Alignment(h="ALIGN_CENTER")
+  
+  sheet0<-createSheet(wb, sheetName = "Gene Info")
+  gene.info<-getBM(a.useful, a[60], gene, mart)
+  gene.phenotype<-getBM("phenotype_description", a[60], gene, mart)
+  
+  ##Generate a survival plot, subset according to quantile
+  t.dataFiltCRC<-as.data.frame(t(dataFiltCRC))
+  ##select patients with upregulated gene (top 15%), and downregulated (bottom 15%)
+  up.gene<-subset(t.dataFiltCRC, t.dataFiltCRC[[gene]]>quantile(t.dataFiltCRC[[gene]], 0.841))
+  down.gene<-subset(t.dataFiltCRC, t.dataFiltCRC[[gene]]<quantile(t.dataFiltCRC[[gene]], 0.159))
+  
+  mean.table<-data.frame(Group=c(paste0(gene,".up"), paste0(gene,".all"), paste0(gene,".down")), nSample=NA, mean.expr=NA)
+  mean.table[1,2]<-length(up.gene[[gene]])
+  mean.table[2,2]<-length(t.dataFiltCRC[[gene]])
+  mean.table[3,2]<-length(down.gene[[gene]])
+  mean.table[1,3]<-mean(up.gene[[gene]])
+  mean.table[2,3]<-mean(t.dataFiltCRC[[gene]])
+  mean.table[3,3]<-mean(down.gene[[gene]])
+  up.gene<-as.data.frame(t(up.gene))
+  down.gene<-as.data.frame(t(down.gene))
+  
+  #use dataClin for all cases, and use dataClin5 for survival up to 5 years
+  dataClin.up<-subset(dataClin5, dataClin$submitter_id %in% substr(colnames(up.gene), 1, 12))
+  dataClin.up<-mutate(dataClin.up, Group = "up")
+  dataClin.down<-subset(dataClin5, dataClin$submitter_id %in% substr(colnames(down.gene), 1, 12))
+  dataClin.down<-mutate(dataClin.down, Group = "down")
+  dataClin.gene<-rbind(dataClin.up, dataClin.down)
+  
+  if (!(ncol(up.gene)==0 | ncol(down.gene)==0))
+  {
+  ##for all data
+  #survival.plot<-TCGAanalyze_survival(dataClin.gene, clusterCol = "Group", risk.table = FALSE)
+  ##for survival up to 5 years  
+    survival.plot<-TCGAanalyze_survival(dataClin.gene, clusterCol = "Group", risk.table = FALSE, xlim=c(0, 1826))
+    im.convert("survival.pdf", output = "survival.png",extra.opts="-density 150")
+  addPicture("survival.png", sheet0, scale=0.5, startRow=6, startColumn=12)
+  }else{
+    warning(paste0(gene," does not have an up group or a down group"))}
+  
+  addDataFrame(mean.table, sheet0, startRow=1, startColumn = 12, colnamesStyle = cs)
+  addDataFrame(gene.info, sheet0, colnamesStyle = cs)
+  addDataFrame(gene.phenotype, sheet0, startRow = 6, colnamesStyle = cs)
+  
+  sheet1<-createSheet(wb, sheetName = "Pathway")
+  pathway_with_gene<-""
+  for (n in (1:length(pathways)))
+  {if (gene %in% pathways[[n]])
+  {pathway_with_gene<-c(pathway_with_gene, names(pathways[n]))}}
+  pathways.info1<-pathway_with_gene[pathway_with_gene!=""]
+  addDataFrame(pathways.info1, sheet1, colnamesStyle = cs)
+  
+  ##Generate an expression figure according to stage
+  if (!(length(subset(dataFiltCRC, rownames(dataFiltCRC)%in%gene))==0))
+  {expr.gene<-as.data.frame(dataFiltCRC[gene,])
+  expr.gene<-mutate(expr.gene, sampleID=rownames(expr.gene))
+  expr.gene<-mutate(expr.gene, brc_patient_barcode=substr(expr.gene$sampleID, 1, 12))
+  gene.dup<-unique(expr.gene$brc_patient_barcode[duplicated(expr.gene$brc_patient_barcode)])
+  expr.gene.single<-subset(expr.gene, !(expr.gene$brc_patient_barcode%in%gene.dup))
+  dataClin.gene<-subset(dataClinSTAGE, dataClin$bcr_patient_barcode%in%expr.gene.single$brc_patient_barcode)
+  dataClin.gene<-merge.data.frame(expr.gene.single, dataClin.gene, by.x ="brc_patient_barcode", by.y = "bcr_patient_barcode" )
+  colnames(dataClin.gene)[2]<-"Expression"
+  my_comparisons <- list(c("I", "II"), c("II", "III"), c("III", "IV"), c("I", "III"), c("I", "IV"), c("II", "IV"))
+  
+  ##Make a staged figure for Young CRC
+  dataClin.gene.young<-subset(dataClin.gene, (dataClin.gene$age_at_diagnosis/365)<50)
+  gene.boxplot<-ggplot(dataClin.gene.young, aes(x = STAGE, y = log2(Expression), fill=STAGE)) +
+    geom_boxplot() +
+    labs(x = "Tumor Stage",
+         y = "Expression (Log2 transformed)",
+         title = paste0(("Expression of "),gene,(" in Young CRC (N=59) by Tumor Stage")))+
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(size=6))+
+    stat_compare_means(comparisons = my_comparisons, label = "p.signif")+
+    stat_compare_means(label.y = min(log2(dataClin.gene$Expression))-1)
+  ggsave(gene.boxplot, filename="TCGA.young.expression.by.stage.png")
+  addPicture("TCGA.young.expression.by.stage.png", sheet1, scale=1, startRow=1, startColumn=12)
+  
+  ##Make a staged figure for Old CRC
+  dataClin.gene.old<-subset(dataClin.gene, (dataClin.gene$age_at_diagnosis/365)>=50)
+  gene.boxplot<-ggplot(dataClin.gene.old, aes(x = STAGE, y = log2(Expression), fill=STAGE)) +
+    geom_boxplot() +
+    labs(x = "Tumor Stage",
+         y = "Expression (Log2 transformed)",
+         title = paste0(("Expression of "),gene,(" in Old CRC (N=333) by Tumor Stage")))+
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(size=6))+
+    stat_compare_means(comparisons = my_comparisons, label = "p.signif")+
+    stat_compare_means(label.y = min(log2(dataClin.gene$Expression))-1)
+  ggsave(gene.boxplot, filename="TCGA.old.expression.by.stage.png")
+  addPicture("TCGA.old.expression.by.stage.png", sheet1, scale=1, startRow=31, startColumn=1)
+  
+  ##Make a staged figure for all CRC
+  gene.boxplot<-ggplot(dataClin.gene, aes(x = STAGE, y = log2(Expression), fill=STAGE)) +
+    geom_boxplot() +
+    labs(x = "Tumor Stage",
+         y = "Expression (Log2 transformed)",
+         title = paste0(("Expression of "),gene,(" in all CRC (N=392) by Tumor Stage")))+
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(size=6))+
+    stat_compare_means(comparisons = my_comparisons, label = "p.signif")+
+    stat_compare_means(label.y = min(log2(dataClin.gene$Expression))-1)
+  ggsave(gene.boxplot, filename="TCGA.all.expression.by.stage.png")
+  addPicture("TCGA.all.expression.by.stage.png", sheet1, scale=1, startRow=31, startColumn=12)
+  }else{
+    warning(paste0(gene," does not have expression data"))
+  }
+  
+  sheet2<-createSheet(wb, sheetName = "CNV")
+  CNV.info2<-subset(Young_NOCNV_genes, Young_NOCNV_genes$GeneSymbol %in% gene)
+  addDataFrame(CNV.info2, sheet2, colnamesStyle = cs)
+  
+  sheet3<-createSheet(wb, sheetName = "SNV")
+  SNV.info3<-subset(Young_Patient_n_69_geneSummary_Freq10percent, Young_Patient_n_69_geneSummary_Freq10percent$Hugo_Symbol %in% gene)
+  addDataFrame(SNV.info3, sheet3, colnamesStyle = cs)
+  ##Lollipop plots for amino acid changes in a gene
+  if (nrow(subset(youngsnv@data, youngsnv@data$Hugo_Symbol%in%gene))>1)
+  {SNV.plot<-lollipopPlot(maf=youngsnv, gene=gene, AACol = 'HGVSp_Short', showMutationRate = TRUE, domainLabelSize = 3, defaultYaxis = FALSE)
+  ggsave(SNV.plot, filename="TCGA.SNV.plot.png")
+  addPicture("TCGA.SNV.plot.png", sheet3, scale=1, startRow=6, startColumn=1)
+  }else{warning(paste0(gene," does not seem to have any mutations!"))}
+  
+  sheet4<-createSheet(wb, sheetName = "DEG")
+  DEG.info4<-subset(Young_vs_YoungControl_DEG, Young_vs_YoungControl_DEG$X1 %in% gene)
+  ##Generate an expression figure for the gene
+  if (!(length(subset(dataFiltCRC, rownames(dataFiltCRC)%in%gene))==0))
+  {gene.young<-as.data.frame(dataFiltYoung[gene,])
+  gene.young<-mutate(gene.young, Group=paste0("Young, N=", nrow(gene.young)))
+  colnames(gene.young)<-c("Expression", "Group")
+  
+  gene.youngcontrol<-as.data.frame(dataFiltYoungControl[gene,])
+  gene.youngcontrol<-mutate(gene.youngcontrol, Group=paste0("YoungControl, N=", nrow(gene.youngcontrol)))
+  colnames(gene.youngcontrol)<-c("Expression", "Group")
+  
+  gene.old<-as.data.frame(dataFiltOld[gene,])
+  gene.old<-mutate(gene.old, Group=paste0("Old, N=", nrow(gene.old)))
+  colnames(gene.old)<-c("Expression", "Group")
+  
+  gene.oldcontrol<-as.data.frame(dataFiltOldControl[gene,])
+  gene.oldcontrol<-mutate(gene.oldcontrol, Group=paste0("OldControl, N=", nrow(gene.oldcontrol)))
+  colnames(gene.oldcontrol)<-c("Expression", "Group")
+  
+  gene.CRC<-as.data.frame(dataFiltCRC[gene,])
+  gene.CRC<-mutate(gene.CRC, Group=paste0("CRC, N=", nrow(gene.CRC)))
+  colnames(gene.CRC)<-c("Expression", "Group")
+  
+  gene.CRCControl<-as.data.frame(dataFiltCRCControl[gene,])
+  gene.CRCControl<-mutate(gene.CRCControl, Group=paste0("CRCControl, N=", nrow(gene.CRCControl)))
+  colnames(gene.CRCControl)<-c("Expression", "Group")
+  
+  gene.expression<-rbind(gene.youngcontrol, gene.young, gene.oldcontrol, gene.old, gene.CRCControl, gene.CRC)
+  addDataFrame(gene.expression, sheet4, startRow=6, startColumn=1, colnamesStyle = cs)
+  gene.expression$Expression<-log2(gene.expression$Expression)
+  gene.expression$Group<-factor(gene.expression$Group, as.character(gene.expression$Group))
+  my_comparisons <- list( c(paste0("YoungControl, N=", nrow(gene.youngcontrol)), paste0("Young, N=", nrow(gene.young))), 
+                          c(paste0("OldControl, N=", nrow(gene.oldcontrol)), paste0("Old, N=", nrow(gene.old))), 
+                          c(paste0("CRCControl, N=", nrow(gene.CRCControl)), paste0("CRC, N=", nrow(gene.CRC))) )
+  gene.boxplot<-ggplot(gene.expression, aes(x = Group, y = Expression, fill=Group)) +
+    geom_boxplot() +
+    labs(x = "Experimental Group",
+         y = "Expression (Log2 transformed)",
+         title = paste0(("TCGA Illumina HiSeq Expression of "),gene))+
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle =element_text(hjust = 0.5),
+          axis.text.x = element_text(size=6))+
+    stat_compare_means(comparisons = my_comparisons)
+  ggsave(gene.boxplot, filename="TCGA.expression.png")
+  addPicture("TCGA.expression.png", sheet4, scale=1, startRow=6, startColumn=6)
+  } else {warning(paste0(gene," does not have expression data"))}
+  addDataFrame(DEG.info4, sheet4, colnamesStyle = cs)
+  
+  sheet5<-createSheet(wb, sheetName = "YoungSpecific")
+  young.info5<-subset(Young_vs_YoungControl_DEG_Young_specific_Genelist, Young_vs_YoungControl_DEG_Young_specific_Genelist$`HUGO ID`%in% gene)
+  addDataFrame(young.info5, sheet5, colnamesStyle = cs)
+  
+  ##Generate a survival plot for young Young, subset according to quantile
+  t.dataFiltYoung<-as.data.frame(t(dataFiltYoung))
+  ##select patients with upregulated gene (top 15%), and downregulated (bottom 15%)
+  up.gene<-subset(t.dataFiltYoung, t.dataFiltYoung[[gene]]>quantile(t.dataFiltYoung[[gene]], 0.841))
+  down.gene<-subset(t.dataFiltYoung, t.dataFiltYoung[[gene]]<quantile(t.dataFiltYoung[[gene]], 0.159))
+  
+  mean.table<-data.frame(Group=c(paste0(gene,".up"), paste0(gene,".all"), paste0(gene,".down")), nSample=NA, mean.expr=NA)
+  mean.table[1,2]<-length(up.gene[[gene]])
+  mean.table[2,2]<-length(t.dataFiltYoung[[gene]])
+  mean.table[3,2]<-length(down.gene[[gene]])
+  mean.table[1,3]<-mean(up.gene[[gene]])
+  mean.table[2,3]<-mean(t.dataFiltYoung[[gene]])
+  mean.table[3,3]<-mean(down.gene[[gene]])
+  up.gene<-as.data.frame(t(up.gene))
+  down.gene<-as.data.frame(t(down.gene))
+  
+  dataClin.up<-subset(dataClin, dataClin$submitter_id %in% substr(colnames(up.gene), 1, 12))
+  dataClin.up<-mutate(dataClin.up, Group = "up")
+  dataClin.down<-subset(dataClin, dataClin$submitter_id %in% substr(colnames(down.gene), 1, 12))
+  dataClin.down<-mutate(dataClin.down, Group = "down")
+  dataClin.gene<-rbind(dataClin.up, dataClin.down)
+  
+  if (!(ncol(up.gene)==0 | ncol(down.gene)==0))
+  {survival.plot<-TCGAanalyze_survival(dataClin.gene, clusterCol = "Group", risk.table = FALSE)
+  im.convert("survival.pdf", output = "survival.png",extra.opts="-density 150")
+  addPicture("survival.png", sheet5, scale=0.5, startRow=12, startColumn=6)
+  }else{
+    warning(paste0(gene," does not have an up group or a down group"))}
+  addDataFrame(mean.table, sheet5, startRow=12, startColumn = 1, colnamesStyle = cs)
+  
+  
+  sheet6<-createSheet(wb, sheetName = "PubMed")
+  ##grab abstracts for gene
+  gene.abs<-getabs(CRCabs, gene, FALSE)
+  gene.PMID<-get_PMCIDS(gene.abs)
+  ##extract sentence from abs for gene
+  gene.sentences<-Give_Sentences(gene, gene.abs)
+  addDataFrame(gene.PMID, sheet6, colnamesStyle = cs)
+  addDataFrame(unlist(gene.sentences), sheet6, startRow = 6, colnamesStyle = cs)
+  
+  sheet7<-createSheet(wb, sheetName = "Human Protein Atlas")
+  ##grab HPA info for gene
+  gene.ensembl<-gene.info$ensembl_gene_id
+  hpa.location<-getHpa(gene.ensembl, hpadata = "hpaSubcellularLoc")
+  hpa.normal<-getHpa(gene.ensembl, hpadata = "hpaNormalTissue")
+  hpa.cancer<-getHpa(gene.ensembl, hpadata = "hpaCancer")
+  hpa.RNA<-getHpa(gene.ensembl, hpadata = "rnaGeneTissue")
+  hpa.RNA2<-getHpa(gene.ensembl, hpadata = "rnaGeneCellLine")
+  
+  addDataFrame(hpa.location, sheet7, colnamesStyle = cs)
+  addDataFrame(hpa.normal, sheet7, startRow = 6, colnamesStyle = cs)
+  addDataFrame(hpa.cancer, sheet7, startRow = 6, startColumn = 9, colnamesStyle = cs)
+  addDataFrame(hpa.RNA, sheet7, startRow = 6, startColumn = 17, colnamesStyle = cs)
+  addDataFrame(hpa.RNA2, sheet7, startRow = 6, startColumn = 24, colnamesStyle = cs)
+  
+  sheet8<-createSheet(wb, sheetName = "Expression Validation with 30 non-TCGA databases")
+  ##Fetch expression data for gene, and generate a boxplot 
+  gene.normal<-as.data.frame(t(normal.combined[gene,]))
+  gene.normal<-filter_all(gene.normal, all_vars(!is.na(.)))
+  gene.normal<-mutate(gene.normal, Group=paste0("Normal, N=", nrow(gene.normal)))
+  
+  gene.young<-as.data.frame(t(young.combined[gene,]))
+  gene.young<-filter_all(gene.young, all_vars(!is.na(.)))
+  gene.young<-mutate(gene.young, Group=paste0("Young, N=", nrow(gene.young)))
+  
+  gene.old<-as.data.frame(t(old.combined[gene,]))
+  gene.old<-filter_all(gene.old, all_vars(!is.na(.)))
+  gene.old<-mutate(gene.old, Group=paste0("Old, N=", nrow(gene.old)))
+  
+  gene.metastatic<-as.data.frame(t(metastatic.combined[gene,]))
+  gene.metastatic<-filter_all(gene.metastatic, all_vars(!is.na(.)))
+  gene.metastatic<-mutate(gene.metastatic, Group=paste0("Metastatic, N=", nrow(gene.metastatic)))
+  
+  gene.expression<-rbind(gene.normal, gene.young, gene.old, gene.metastatic)
+  colnames(gene.expression)<-c("Expression", "Group")
+  gene.expression$Group<-factor(gene.expression$Group, as.character(gene.expression$Group))
+  my_comparisons <- list( c(paste0("Normal, N=", nrow(gene.normal)), paste0("Young, N=", nrow(gene.young))), 
+                          c(paste0("Normal, N=", nrow(gene.normal)), paste0("Old, N=", nrow(gene.old))), 
+                          c(paste0("Normal, N=", nrow(gene.normal)), paste0("Metastatic, N=", nrow(gene.metastatic))) )
+  gene.boxplot<-ggplot(gene.expression, aes(x = Group, y = Expression, fill=Group)) +
+    geom_boxplot() +
+    labs(x = "Experimental Group",
+         y = "Expression (Log2 transformed)",
+         title = paste0(("Expression of "),gene,(" in 22 CRC expression databases")),
+         subtitle = "(non-TCGA)")+
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.subtitle =element_text(hjust = 0.5) )+
+    stat_compare_means(comparisons = my_comparisons)
+  ggsave(gene.boxplot, filename="gene.expression.validation.png")
+  addDataFrame(gene.expression, sheet8, colnamesStyle = cs)
+  addPicture("gene.expression.validation.png", sheet8, scale=1, startRow=1, startColumn=6)
+  saveWorkbook(wb, file = paste0("Ten_Analyses_Results_", gene, ".xlsx"))
+}
+#candy<-as.data.frame(c("LEPR", "HSPA5", "SERPINH1", "SPARC"))
+#colnames(candy)<-"X1"
