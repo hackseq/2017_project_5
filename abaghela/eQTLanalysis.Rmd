@@ -1,0 +1,22 @@
+---
+title: "eQTL analysis"
+author: "Arjun Baghela"
+date: '2017-10-20'
+output: html_document
+---
+
+This is the start of an simplified eQTL analysis. The goal is to highlight different packages which can make this easier and the general overview how it is done.
+
+
+First things first, lets load the packages we will primarily use. 
+```{r}
+library(biomaRt)
+library(data.table)
+library(magrittr) # This is to be able to use the pipe. 
+```
+
+Next thing we want to upload our expression data, in the form of a count table. This means that the RNA-seq data has already been aligned and counted. 
+```{r}
+read.csv("./")
+```
+

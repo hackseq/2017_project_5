@@ -1,0 +1,52 @@
+# Unsupervised clustering
+This folder will comprise tutorials for unsupervised clustering methods useful in genomics analysis. 
+The dataset I have used is publicly available RNA-seq data, from <here>. 
+Please see the flowchart for general data pipeline visualisation, and follow the links therein to the individual tutorial pages.
+
+
+                               ┌──────────────────────────────────────┐                             
+                               │                                      │                             
+                               │             RNA-seq data             │                             
+                               │            - where from?             │                             
+                               │   - what preprocessing has it gone   │                             
+                               │               through?               │                             
+                               │ - what format (vcf, SC matrix, bam,  │                             
+                               │             fasta etc)?              │                             
+                               │                                      │                             
+                               │                                      │                             
+                               └──────────────────────────────────────┘                             
+                                                   │                                                
+                                                   │                                                
+                                                   ▽                                                
+                                             ┌──────────┐                                           
+                                             │Clustering│                                           
+                                             └──────────┘                                           
+                                                   │                                                
+                                                   │                                                
+        ┌────────────────────┬─────────────────────┼─────────┬───────────────┬────────────────┐     
+        │                    │                     │         │               │                │     
+        ▽                    ▽                     │         ▽               ▽                ▽     
+┌───────────────┐        ┌───────┐         ┌───────┘     ┌───────┐    ┌────────────┐     ┌─────────┐
+│ Hierarchical  │        │  PCA  │         │             │  NMF  │    │            │     │  tSNE   │
+│  clustering   │        └───────┘         │             └───────┘    │ Consensus  │     └─────────┘
+│               │            │             │                 │        │ clustering │          │     
+└───────────────┘            │             │                 │        │            │          │     
+        │                    │             │                 │        └────────────┘          │     
+        │                    │             ▽                 │               │                │     
+        │                    │      ┌────────────┐           │               │                │     
+        │                    │      │  K means   │           │               │                │     
+        │               ┌────┘ ┌───▷│            │           │               │                │     
+        │               │      │    └────────────┘           │               │                │     
+        │               │      │           │                 │               │                │     
+        │               │      │           │                 │               │                │     
+        │               │      │           │                 │               │                │     
+        │               │      │┌──────────┘                 │               │                │     
+        │               │      ││                            │               │                │     
+        │               ▽  ────┘│                            │               │                │     
+        │       ┌──────────────┐▽                            │               │                │     
+        └──────▷│Visualisation │◁────────────────────────────┴───────────────┴────────────────┘     
+                └──────────────┘                                                                    
+
+
+
+
