@@ -7,8 +7,7 @@ bibliography: refs.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(fig.align = "center", out.width = "65%", 
-                      fig.asp = 0.75, error = TRUE)
+knitr::opts_chunk$set(fig.align = "center", out.width = "65%", fig.asp = 0.75)
 options(width = 85)
 ```
 
