@@ -1,0 +1,179 @@
+ï»?---
+title: "hackseq"
+author: "Yisong Zhen"
+date: "October 21, 2017"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+pkgs <- c( 'tidyverse','Rsubread','org.Mm.eg.db','edgeR',
+           'limma', 'DESeq2', 'genefilter','grid',
+           'openxlsx','pheatmap','gridExtra','ggrepel',
+           'annotate','clusterProfiler',
+           'GGally','RColorBrewer','ggbio',
+           'cluster','factoextra','ggpubr',
+           'Rsamtools', 'devtools','parallel',
+           'GenomicAlignments', 'BiocParallel',
+           'reshape2', 'stringr','rtracklayer'
+           )
+load.lib <- lapply(pkgs, require, character.only = TRUE)
+```
+
+
+this is my own setting in our computation server. I have configured the path to 
+the required reference genomes and corresponding annotation files.
+
+```{r parameter setting, include = FALSE}
+
+mm10.genome.file     <- file.path('/mnt/date/igenomes/Mus_musculus/UCSC/mm10/Sequence/WholeGenomeFasta/genome.fa')
+rsubread.index.lib   <- file.path('/mnt/date/igenomes/rsubread')
+lncRmRNA.GRCm38.GTF.file  <- file.path('/mnt/date/genomelib/annotation/gencode/GRCm38.mouse.GTF')
+wangyb.output.dir         <- file.path('/home/zhenyisong/biodata/cardiodata/SRP082390/rsubread')
+raw.data.path             <- file.path('/home/zhenyisong/biodata/cardiodata/GSE85728')
+
+```
+
+
+I get raw data from public database using aspera client (linux) to get my data from 
+NCBI as most RNA-seq data, particulary, lncRNA data are large in doing so to reach
+the deep seqeunce depth. But before running the demo code below, the user should install
+his/her own aspera program locally.
+
+```{r download raw data, eval = FALSE}
+aspc.exe       <- '/bioware/bin/.aspera/connect/bin/ascp'
+key            <- '/bioware/bin/.aspera/connect/etc/asperaweb_id_dsa.openssh'
+host           <- 'ftp-private.ncbi.nlm.nih.gov'
+rawdata        <- '/sra/sra-instant/reads/ByStudy/sra/SRP/SRP043/SRP043076'
+download.data  <- system( paste( aspc.exe,' -QT -L- -k 3 -i ', 
+                                 key,' --host=', host,
+                                 ' --user=anonftp',
+                                 ' --mode=recv --retry-timeout=10 -d ',
+                                 rawdata, './') )
+
+system( paste( 'find ', '.', ' -name ', '*.sra', ' -type f | xargs  -n 1 -P 2 fastq-dump --split-3') )
+
+raw.data.path      <- '/home/zhenyisong/biodata/cardiodata/GSE85728'
+GSE85728.files     <- list.files( raw.data.path, pattern = 'SRR.*.fastq$')
+read.1.files       <- GSE85728.files[grep('_1',GSE85728.files)]
+read.2.files       <- GSE85728.files[grep('_2',GSE85728.files)]
+
+GSE85728.output.filenames  <- basename(read.1.files) %>% 
+                              sub(pattern = '_1.fastq', replacement = '') %>%
+                              paste0(wangyb.output.dir,'/', . ,'.bam')
+
+dir.create(GSE85728.output.dir, showWarnings = FALSE, recursive = TRUE)
+setwd(rsubread.index.lib)
+base.string          <-  'mm10'
+
+align( index          = base.string, 
+       readfile1      = read.1.files, 
+       readfile2      = read.2.files, 
+       input_format   = 'FASTQ', 
+       type           = 'rna',
+       output_file    = GSE85728.output.filenames, 
+       output_format  = 'BAM',
+       PE_orientation = 'fr', 
+       nthreads       = 30, 
+       indels         = 1,
+       maxMismatches  = 3,
+       phredOffset    = 33,
+       unique         = T )
+
+
+GSE85728.rsubread.gencode <- featureCounts( GSE85728.output.filenames, useMetaFeatures = TRUE,
+                                          countMultiMappingReads = FALSE,
+                                          strandSpecific         = 2, 
+                                          isPairedEnd            = TRUE,
+                                          requireBothEndsMapped  = TRUE,
+                                          autosort               = TRUE,
+                                          nthreads               = 17,
+                                          annot.ext              = lncRmRNA.GRCm38.GTF.file , 
+                                          isGTFAnnotationFile    = TRUE,
+                                          GTF.featureType        = 'exon',
+                                          GTF.attrType           = 'gene_id',
+                                          allowMultiOverlap      = TRUE)
+
+gencode.GRCh38.mouse   <- import(lncRmRNA.GRCm38.GTF.file)
+```
+
+```{r load demo data, include = TRUE}
+
+setwd("../data")
+load('yisong.Demo.Rdata')
+ls()
+
+```
+
+```{r figure reports, include = TRUE}
+
+
+GRCm38.genenames <- GSE85728.rsubread.gencode %$% annotation %$% 
+                    GeneID %>% sub('.\\d+$','',., perl = F) %>%
+                    mapIds( org.Mm.eg.db, keys = ., column = 'SYMBOL', 
+                            keytype = 'ENSEMBL', multiVals = 'first') %>%
+                    make.names( unique = TRUE)
+
+GRCm38.extra.annot      <- gencode.GRCm38.mouse %$% 
+                           {data.frame( ensembl.id = gene_id, 
+                                          gene       = type, 
+                                          gene_type  = gene_type)}%>%
+                           filter(gene == 'gene') %>% unique()
+
+rnaseq.rlog.func   <- function(genes,annot) {
+                          genes %$% counts %>% 
+                          DGEList(genes = annot) %>% 
+                          calcNormFactors() %>% rpkm(log = T)
+                      }
+GSE85728.rpkm <- rnaseq.rlog.func( GSE85728.rsubread.gencode, 
+                                           GSE85728.rsubread.gencode$annotation)
+
+
+colnames(GSE85728.rpkm) <- c( 'LVP0_rep1','LVP0_rep2','LVP0_rep3','LVP3_rep1',
+                              'LVP3_rep2','LVP3_rep3','LVP7_rep1','LVP7_rep2',
+                              'LVP7_rep3','RVP0_rep1','RVP0_rep2','RVP0_rep3',
+                              'RVP3_rep1','RVP3_rep2','RVP3_rep3','RVP7_rep1',
+                              'RVP7_rep2')
+
+GSE85728.extra.annot     <- GSE85728.rsubread.gencode %$% 
+                            annotation %$% 
+                            GeneID %>% 
+                            data.frame(GeneID = .) %>%
+                            inner_join( GRCm38.extra.annot, 
+                                        by = c('GeneID' = 'ensembl.id')) %>%
+                            mutate(GeneID = as.character(GeneID))
+apply.mean.func    <- function(df.matrix, col_nums) {
+                          apply(df.matrix[,col_nums],1, mean)
+                      }
+comparision.list   <- list( LVP0 = 1:3,   LVP3 = 4:6,
+                            LVP7 = 7:9,   RVP0 = 10:12,
+                            RVP3 = 13:15, RVP7 = 16:17 )
+time.point.rpkm  <- map(comparision.list, apply.mean.func, df.matrix = GSE85728.rpkm) %>%
+                    as.data.frame() %>% mutate(GeneName = GRCm38.genenames) %>%
+                    mutate(EnsemblID = GSE85728.rsubread.gencode$annotation$GeneID ) %>%
+                    inner_join(GSE85728.extra.annot, by = c('EnsemblID' = 'GeneID')) %>%
+                    as_tibble()
+
+
+left.right.markers <- list()
+QC.genename     <- 'Myl2'
+data.QC.checker <- time.point.rpkm %>% 
+                   filter(GeneName == QC.genename) %>%
+                   melt(.) %>%
+                   mutate(stages = as.factor(str_sub(variable, 3,4))) %>%
+                   mutate(stages = factor(stages, levels(stages)[1:3])) %>%
+                   mutate(exprs  = value) %>%
+                   mutate(groups = as.factor(str_sub(variable, 1, 1))) %>%
+                   ggplot( data = ., 
+                           aes( x = stages, y = exprs, group = groups)) +
+                   geom_line( linetype = 'dashed', 
+                              aes(color = groups)) + 
+                   geom_point(aes(color = groups)) +
+                   scale_x_discrete( limits = c('P0','P3','P7')) +
+                   xlab('developmental stages') +
+                   ylab('gene expression log(rpkm)') +
+                   ggtitle( paste('gene symbol', QC.genename, 'QC checke', sep = ' ')) +
+                   theme(plot.title = element_text(hjust = 0.5))
+(data.QC.checker)
+
+```
