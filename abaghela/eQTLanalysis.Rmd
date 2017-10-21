@@ -5,18 +5,34 @@ date: '2017-10-20'
 output: html_document
 ---
 
-This is the start of an simplified eQTL analysis. The goal is to highlight different packages which can make this easier and the general overview how it is done.
+This is the start of an simplified eQTL analysis. The goal is to highlight different packages which can make this easier and a general overview of what it is. 
 
 
 First things first, lets load the packages we will primarily use. 
 ```{r}
 library(biomaRt)
+mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+
 library(data.table)
 library(magrittr) # This is to be able to use the pipe. 
+#
 ```
 
 Next thing we want to upload our expression data, in the form of a count table. This means that the RNA-seq data has already been aligned and counted. 
 ```{r}
-read.csv("./")
+exprData <- read.table("~/Downloads/GSE85567_RNASeq_normalizedcounts.txt", header = TRUE, row.names = 1)
+metaData <- read.table("~/Downloads/GSE85566_metadata.txt", header= TRUE, row.names = 1, sep= ",")
+```
+
+So, what are eQTLs? Expression quantitative trait loci (eQTLs) are genomic loci that contribute to variation in expression levels of mRNAs. So for each gene, the expression level and mutations are checked to see if there is an association. This indicates whether certain mutation(s) contribute to changes in expression. (plagarized from wiki :D)
+```{r}
+
+
+mapStuff <- function(genes) {
+  geneList <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id", "hgnc_symbol", "description", "start_position", "end_position"),values=genes,mart=mart)
+  geneList <- geneList %>% dplyr::select(-c(ensembl_gene_id))
+  return(geneList)
+}
+rownames(exprData)[1:10] %>% mapStuff()
 ```
 
