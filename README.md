@@ -3,7 +3,9 @@
 ![Hackseq 2017](https://img.shields.io/badge/Hackseq-2017-cccccc.svg)
 ![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)
 
-This repository features a collection of advanced R tutorials for genomic data analysis. Check them out here: [https://hackseq.github.io/2017_project_5/](https://hackseq.github.io/2017_project_5/)
+This repository features a collection of advanced R tutorials for genomic data analysis. Check them out here: 
+
+**R Tutorials:** [https://hackseq.github.io/2017_project_5/](https://hackseq.github.io/2017_project_5/)
 
 This idea is born out of the realization that much of the more advanced domain-specific knowledge needed for genomic data analysis is acquired through serendipitous discovery and extensive experience. The aim of this project is to pool this hard-fought collective knowledge and organize it into consistent modular tutorials. 
 
