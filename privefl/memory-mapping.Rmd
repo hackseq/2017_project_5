@@ -1,0 +1,143 @@
+---
+title: "Genomic data analysis with large matrices in R"
+author: "Florian Privé"
+date: "October 21, 2017"
+output: html_document
+bibliography: refs.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.align = "center", out.width = "65%", 
+                      fig.asp = 0.75, error = TRUE)
+options(width = 85)
+```
+
+For multiple genomic data, most of the information can be stored as matrices. The most striking example is with SNP data, which can be stored as matrices with thousands to hundreds of thousands of rows (samples) with hundreds of thousands to dozens of millions of columns (SNPs) [@Bycroft166298]. This results in datasets of GygaBytes to TeraBytes of data.
+
+Other fields in genomics, such as proteomics or expression data, use data stored as matrices potentially of size larger than available memory.
+
+To address large data size in R, we can use memory-mapping for accessing large matrices stored on disk instead of in RAM. This has existed in R for several years thanks to package bigmemory [@Kane2013].
+
+More recently, two packages which use the same principle as bigmemory have been developed: bigstatsr and bigsnpr [@Prive190926]. Package bigstatsr implements many statistical tools for several types of Filebacked Big Matrices (FBMs), making it usable for any type of genomic data that can be encoded as a matrix. The statistical tools in bigstatsr include implementation of multivariate sparse linear models, Principal Component Analysis (PCA), matrix operations, and numerical summaries. Package bigsnpr implements algorithms which are specific to the analysis of SNP arrays, making use of already implemented features in package bigstatsr.
+
+In this small tutorial, we'll see the potential benefits of using memory-mapping instead of standard R matrices in memory, by using bigstatsr and bigsnpr. 
+
+## Examples
+
+### Example of expression data
+
+Let's use the NCBI GEO archive to get some example expression data [@barrett2012ncbi].
+
+```{r}
+# http://bioconductor.org/packages/release/bioc/html/GEOquery.html
+suppressMessages(library(GEOquery))
+
+# All data
+gds <- getGEO("GDS3929")
+str(gds, max.level = 2)
+format(object.size(gds), units = "MB")
+df <- gds@dataTable@table
+format(object.size(df), units = "MB")
+# Part of the data that can be encoded as a matrix
+mat <- t(df[-(1:2)])
+dim(mat)
+format(object.size(mat), units = "MB")
+```
+
+In this data, `r as.integer(round(100 * object.size(mat) / object.size(gds)))`% of the information can be encoded as a matrix. For larger data, this could increase to more than 99%. Let us store this as a Filebacked Big Matrix (FBM).
+
+```{r}
+# https://github.com/privefl/bigstatsr
+library(bigstatsr)
+fbm <- big_copy(mat)
+# Same data?
+all.equal(fbm[], mat, check.attributes = FALSE)
+# Size in memory
+format(object.size(fbm), units = "MB")
+# File where the data is backed
+fbm$backingfile
+```
+
+So, now the matrix is stored on disk and basically takes no memory. So, using FBMs would take 100 times less space to store the data.
+
+For omic data, computing PCA (or SVD) is sometimes useful to assess the structure in the data. Let's do this.
+
+```{r}
+system.time(
+  svd <- svd(scale(mat), nu = 10, nv = 10)
+)
+plot(svd$u)
+```
+
+```{r}
+system.time(
+  svd2 <- big_SVD(fbm, big_scale(), k = 10)
+)
+plot(svd2)
+plot(svd2, type = "scores")
+```
+
+The goal of memory-mapping is to not have all the data in memory. This force programmers to think more before implementing algorithms. This can lead to implementations that can be much faster than current R implementations.
+Moreover, data stored on disk is shared between processes so that parallelism in algorithms can be implemented more easily and efficiently, for example removing the need to copy the data.
+
+### Example of SNP data
+
+Let's use some 1000 Genomes data from [Gad Abraham's GitHub repository](https://github.com/gabraham/flashpca/tree/master/HapMap3) which have been filtered and quality-controled.
+
+```{r}
+tmpfile <- tempfile()
+base <- paste0(
+  "https://github.com/gabraham/flashpca/raw/master/HapMap3/",
+  "1kg.ref.phase1_release_v3.20101123_thinned_autosomal_overlap")
+exts <- c(".bed", ".bim", ".fam")
+purrr::map2_int(paste0(base, exts), paste0(tmpfile, exts), ~download.file(.x, .y))
+```
+
+First, we have to transform these data in PLINK format to an FBM.
+In package bigsnpr, function `snp_readBed` is provided to do just that. It is implemented with Rcpp, which makes it very fast. Package Rcpp makes easy to use C++ code in R and with R objects. 
+
+```{r}
+# https://github.com/privefl/bigstatsr
+library(bigsnpr)
+rdsfile <- snp_readBed(paste0(tmpfile, ".bed"), tempfile())
+
+bigsnp <- snp_attach(rdsfile)
+(G <- bigsnp$genotypes)
+object.size(G)
+```
+
+```{r}
+G.matrix <- G[]
+format(object.size(G.matrix), units = "MB")
+```
+
+For large SNP data, this format can save us a lot of memory.
+
+```{r}
+system.time(
+  svd <- svd(scale(G.matrix), nu = 10, nv = 10)
+)
+plot(svd$u)
+
+system.time(
+  svd2 <- big_SVD(G, big_scale(), k = 10)
+)
+plot(svd2)
+plot(svd2, type = "scores")
+```
+
+And with smart algorithms, we can save a lot of computation time.
+
+## Learn more
+
+You can find vignettes and documentation of packages bigstatsr and bigsnpr in their GitHub repositories. In order to find more details about memory-mapping and packages bigstatsr and bigsnpr, please refer to the corresponding paper [@Prive190926].
+
+You'll see for example that when using memory-mapping, it's possible to make a parallelized algorithm for computing partial Singular Value Decomposition that is lightning fast, using an already implemented algorithm in another R package.
+
+```{r, echo=FALSE}
+knitr::include_graphics("https://github.com/privefl/paper-packages/raw/master/figures/benchmark-pca.png")
+```
+
+You'll also see that it is possible to make a Genome-Wide Association Study (GWAS) on 500,000 individuals genotyped on more than 1,000,000 SNPs, thus analyzing more than 100 GB of compressed data on a single desktop computer.
+
+## References
