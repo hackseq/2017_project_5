@@ -1,0 +1,241 @@
+---
+title: "Analysis of results in a consistent data structure"
+author: "Florian Privé"
+date: "October 21, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.align = "center", out.width = "75%", fig.asp = 0.75)
+options(width = 85)
+```
+
+How do you store results of an analysis?
+
+When you have different parameters that are varying, when you compare many methods and when you want to keep all the results of an analysis, your code can become quite complex.
+
+In this tutorial, we'll make a comparison of machine learning methods for predicting disease based on small SNP data. We'll show how to use the tidyverse set of packages to make the analysis easier by using consistent data structures and functional programming. We'll use tibbles with [list-columns](http://r4ds.had.co.nz/many-models.html).
+
+## A simulation made easy
+
+### Data
+
+Let's use some 1000 Genomes data from [Gad Abraham's GitHub repository](https://github.com/gabraham/flashpca/tree/master/HapMap3) which have been filtered and quality-controled.
+
+
+```{r}
+library(tidyverse)
+tmpfile <- tempfile()
+base <- paste0(
+  "https://github.com/gabraham/flashpca/raw/master/HapMap3/",
+  "1kg.ref.phase1_release_v3.20101123_thinned_autosomal_overlap")
+exts <- c(".bed", ".bim", ".fam")
+map2_int(paste0(base, exts), paste0(tmpfile, exts), ~download.file(.x, .y))
+```
+
+```{r}
+library(bigsnpr)
+rdsfile <- snp_readBed(paste0(tmpfile, ".bed"), tempfile())
+
+bigsnp <- snp_attach(rdsfile)
+G <- bigsnp$genotypes
+obj.svd <- snp_autoSVD(G, bigsnp$map$chromosome, bigsnp$map$physical.pos, ncores = 2)
+# Matrix of genotypes and first 10 PCs
+X <- cbind(G[], obj.svd$u)
+```
+
+### Methods' functions
+
+```{r, message=FALSE}
+library(tidyverse)
+```
+
+Each method's function returns a tibble (data frame) with 4 columns:
+
+1. the name of the method,
+2. the predictive scores and true phenotypes for the test set, as a [list-column](http://r4ds.had.co.nz/many-models.html),
+3. the timing of the main computations (in seconds),
+4. the number of SNPs used for the prediction.
+
+```{r}
+logit <- function(X, y, ind.train, ind.test) {
+  
+  timing <- system.time({
+    train <- glmnet::cv.glmnet(X[ind.train, ], y[ind.train], type.measure = "auc", 
+                               family = "binomial", alpha = 0.5)
+    preds <- predict(train, X[ind.test, ])
+  })[3]
+  
+  tibble(
+    method = "logit",
+    eval = list(cbind(preds, y[ind.test])),
+    timing = timing,
+    nb.preds = sum(glmnet::coef.cv.glmnet(train) != 0)
+  )
+}
+```
+
+```{r}
+svm <- function(X, y, ind.train, ind.test) {
+  
+  timing <- system.time({
+    train <- LiblineaR::LiblineaR(X[ind.train, ], y[ind.train], type = 5)
+    preds <- predict(train, X[ind.test, ], decisionValues = TRUE)
+  })[3]
+  
+  tibble(
+    method = "svm",
+    eval = list(cbind(1 - preds$decisionValues[, 1], y[ind.test])),
+    timing = timing,
+    nb.preds = sum(train$W != 0)
+  )
+}
+```
+
+```{r}
+xgb <- function(X, y, ind.train, ind.test) {
+  
+  timing <- system.time({
+    train <- xgboost::xgboost(data = X[ind.train, ], label = y[ind.train],
+                              nrounds = 10, max_depth = 3, eta = 1,
+                              objective = "binary:logistic", 
+                              verbose = FALSE, save_period = NULL)
+    preds <- predict(train, X[ind.test, ])
+  })[3]
+  
+  tibble(
+    method = "xgb",
+    eval = list(cbind(preds, y[ind.test])),
+    timing = timing,
+    nb.preds = nrow(xgboost::xgb.importance(model = train))
+  )
+}
+```
+
+### Simulation of phenotypes
+
+```{r}
+get_pheno <- function(
+  G,                                        ## matrix of genotypes
+  h2,                                       ## heritability 
+  M,                                        ## nbs of causal variants
+  effects.dist = c("gaussian", "laplace"),  ## distribution of effects 
+  K = 0.3                                   ## prevalence
+) {
+  
+  effects.dist  <- match.arg(effects.dist)
+  
+  set <- sample(ncol(G), size = M)
+  effects <- `if`(effects.dist == "gaussian", 
+                  rnorm(M, sd = sqrt(h2 / M)),
+                  rmutil::rlaplace(M, s = sqrt(h2 / (2*M))))
+  
+  y.simu <- scale(G[, set]) %*% effects
+  y.simu <- y.simu / sd(y.simu) * sqrt(h2)
+  stopifnot(all.equal(drop(var(y.simu)), h2))
+  y.simu <- y.simu + rnorm(nrow(G), sd = sqrt(1 - h2))
+  # Liability Threshold Model (LTM)
+  pheno <- as.numeric(y.simu > qnorm(1 - K))
+}
+```
+
+### Simulations
+
+First, we use `expand.grid` to create a data frame with all possible combination of parameters we compare.
+
+```{r}
+results <- expand.grid(
+  M        = c(30, 3000), 
+  dist     = c("gaussian", "laplace"), 
+  num.simu = 1:10,
+  stringsAsFactors = FALSE
+) %>% 
+  as_tibble() %>%
+  print()
+```
+
+Then, we use package purrr to add a new column to the data frame with all the results. The main condition for a data frame is that each column has the same number of elements. So, by using lists, we can basically store any types of data in a data frame. For example, in column `"eval"` we store matrices, this is called a list-column. In the newly-created column `"res"`, we store data frames! We use tibbles instead of standard data frames because they print better.
+
+```{r, cache=TRUE}
+results[["res"]] <- pmap(results, function(M, dist, num.simu) {
+  
+  cat(".")
+  
+  y <- get_pheno(X, 0.8, M, dist)
+  
+  n <- nrow(X)
+  ind.train <- sort(sample(n, size = 500))
+  ind.test <- setdiff(1:n, ind.train)
+  
+  bind_rows(
+    logit(X, y, ind.train, ind.test),
+    svm(X, y, ind.train, ind.test),
+    xgb(X, y, ind.train, ind.test)
+  ) 
+})
+```
+
+```{r}
+results
+```
+
+
+### Results
+
+First, we use function `unnest` of package `tidyr` so that we have a tidier data frame. To learn more about *tidy data*, please refer to [this vignette](http://tidyr.tidyverse.org/articles/tidy-data.html) and [this book chapter](http://r4ds.had.co.nz/tidy-data.html).
+
+```{r}
+(results <- unnest(results, res))
+```
+
+To compute the AUC (a measure of prediction accuracy), we use purrr again and specify the type of the output we want (`_dbl` for doubles). Here, we could use function mutate of package dplyr instead of standard accessor `[[`.
+
+```{r}
+results[["AUC"]] <- map_dbl(results[["eval"]], ~bigstatsr::AUC(.x[, 1], .x[, 2]))
+results
+```
+
+Now, let's get some summaries of the results with package dplyr.
+
+```{r}
+results %>%
+  group_by(M, dist, method) %>%
+  summarise_at(c("timing", "nb.preds", "AUC"), mean)
+```
+
+
+### Visualise results
+
+Finally, let's use package ggplot2, also part of the tidyverse, to plot the results.
+
+```{r}
+# Wrapper to use my own theme
+myggplot <- function(...) bigstatsr:::MY_THEME(ggplot(...))
+```
+
+```{r}
+myggplot(results) + 
+  geom_boxplot(aes(method, timing)) +
+  scale_y_continuous(breaks = seq(0, 20, 2)) +
+  facet_grid(M ~ dist) +
+  theme(strip.text.x = element_text(size = rel(2)),
+        strip.text.y = element_text(size = rel(2))) +
+  ggtitle("Timings")
+```
+
+```{r}
+myggplot(results) + 
+  geom_hline(yintercept = 0.5, color = "red", linetype = 2) + 
+  geom_boxplot(aes(method, AUC)) +
+  scale_y_continuous(breaks = 0:10 / 10) +
+  facet_grid(M ~ dist) +
+  theme(strip.text.x = element_text(size = rel(2)),
+        strip.text.y = element_text(size = rel(2))) +
+  ggtitle("Predictive performance")
+```
+
+## Conclusion
+
+The main point of using tibbles to store results is that you have the inputs, raw outputs and transformed outputs in the same data structure. Moreover, this data structure contains information that are easy to manipulate and visualize. Finally, note that we didn't use a single loop in the whole method comparison.
+
+The tidyverse set of packages is very convenient and consistent. You can learn more by reading [book R for Data Science](http://r4ds.had.co.nz/), freely available online.

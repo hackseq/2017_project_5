@@ -96,7 +96,7 @@ First, we have to transform these data in PLINK format to an FBM.
 In package bigsnpr, function `snp_readBed` is provided to do just that. It is implemented with Rcpp, which makes it very fast. Package Rcpp makes easy to use C++ code in R and with R objects. 
 
 ```{r}
-# https://github.com/privefl/bigstatsr
+# https://github.com/privefl/bigsnpr
 library(bigsnpr)
 rdsfile <- snp_readBed(paste0(tmpfile, ".bed"), tempfile())
 
