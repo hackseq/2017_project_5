@@ -1,17 +1,37 @@
 ---
-title:   "hackseq"
+title:   "Authetic code in wet lab, bridging dry and wet parterners"
 author:  "Yisong Zhen"
 date:    "October 21, 2017"
+bibliography: hackseq.bib
+csl: bioinformatics.csl
 output:  html_document
 ---
 
-The follwoing is the authetic code in my on-going project to find the key 
-players in controling left-right (L-R) patterning during heart development.
+## Introduction
+The following is the authentic code in my on-going project to find the key 
+players in controlling left-right (L-R) patterning during heart development[@Chen2010-uk].
+Raw data is from wanglab's recent work [@Touma2016-ym].
 
-My biologoical question is, what are the novel determint involved in LR patterning?
+We have met problems in biomedicine field. The researching work is not fully 
+reproducible[@Prinz2011-nt;@Baker2015-tu]. 
+And data-sharing is also arguable in biomedicine researchers [@International_Consortium_of_Investigators_for_Fairness_in_Trial_Data_Sharing2016-vv.
+And source code is kept confidentially in individual labs.
+
+- Github to collaborate with researchers over the world in a big project
+- Rmarkdown to share the knowledge with biologists and perform reproducible research
+- Clean code style to facilitate the code maintenance in the future studies
+- Ask an interesting question first and then analyze the raw data
+
+
+My biological question is, what are the novel determinants involved in LR patterning?
 
 ```{r setup, include = FALSE}
-
+knitr::opts_chunk$set( 
+    fig.align = 'center', 
+    out.width = '65%', 
+    fig.asp   = 0.45,
+    comment   = '#>')
+options(width = 85)
 pkgs <- c( 'tidyverse','Rsubread','org.Mm.eg.db','edgeR',
            'limma', 'DESeq2', 'genefilter','grid',
            'openxlsx','pheatmap','gridExtra','ggrepel',
@@ -40,9 +60,9 @@ raw.data.path             <- file.path('/home/zhenyisong/biodata/cardiodata/GSE8
 ```
 
 
-I get raw data from public database using aspera client (linux) to get my data from 
-NCBI as most RNA-seq data, particulary, lncRNA data are large in doing so to reach
-the deep seqeunce depth. But before running the demo code below, the user should install
+I get raw data from public database using aspera client (Linux) to get my data from 
+NCBI as most RNA-seq data, particularly, lncRNA data are large in doing so to reach
+the deep sequence depth. But before running the demo code below, the user should install
 his/her own aspera program locally.
 
 ```{r download raw data, eval = FALSE}
@@ -109,8 +129,8 @@ gencode.GRCh38.mouse   <- import(lncRmRNA.GRCm38.GTF.file)
 ```
 
 In this tutorial, I use the preprocessed data (Rdata, saved objects, 
-GSE85728.rsubread.gencode & gencode.GRCh38.mouse) generated from the above protocol
-to show the inference procedure.
+GSE85728.rsubread.gencode & gencode.GRCh38.mouse) generated from the above steps
+to show the inference procedure below.
 
 ```{r load demo data, include = TRUE}
 
@@ -195,6 +215,12 @@ time.point.rpkm  <- map(comparision.list, apply.mean.func, df.matrix = GSE85728.
 
 left.right.markers <- list()
 QC.genename     <- 'Myl2'
+#---
+# I always, like in biological experiments, use the postive 
+# control to validate my results. In the public data, I prefer
+# to choose the known pathway markers to confirm that the data
+# is solid compared with the established observations
+#---
 data.QC.checker <- time.point.rpkm %>% 
                    filter(GeneName == QC.genename) %>%
                    melt(.) %>%
@@ -216,22 +242,33 @@ data.QC.checker <- time.point.rpkm %>%
 
 
 
-# PCA analysis for wangyin, data replication check
+# PCA analysis for GSE85728 (RNA-seq), data validation check
 #---
 
 tissue.groups <- sample.names %>%
                  sub('_.*$', '', perl = F, .) %>% as.factor() %>%
                  data.frame(tissueGroups = .)
 GSE85728.vsd.data <- GSE85728.rsubread.gencode %$% counts %>% 
-                    DESeqDataSetFromMatrix( countData = ., 
-                                           colData = tissue.groups, 
-                                           design = ~ tissueGroups) %>%
-                    DESeq() %>% getVarianceStabilizedData() %>% invisible()
+                     DESeqDataSetFromMatrix( countData = ., 
+                                             colData = tissue.groups, 
+                                             design = ~ tissueGroups) %>%
+                     DESeq() %>% getVarianceStabilizedData()
 colnames(GSE85728.vsd.data) <- sample.names
+
+#---
+# generate the PCA result by calling the function prcomp
+# data needs to be transposed if rows are genes and column
+# are samples.
+#---
 
 GSE85728.vsd.PCA <- GSE85728.vsd.data %>% t() %>% prcomp()
 
+#---
 # quick and dirty map
+# I am used to use the base graphics fucntion to
+# fast view the result and then use the ggplot 
+# to make a scientific report for journla publicaiton
+#
 # deprecated
 #---
 "
@@ -240,8 +277,9 @@ text( GSE85728.vsd.PCA$x[,1], GSE85728.vsd.PCA$x[,2],
       labels = colnames(GSE85728.vsd.data), cex = 0.7)
 "
 
-# please see the original code
-# from cardioMaturation.R
+#
+# using the pipeline function in tidyverse
+# this make life easier and simple.
 #---
 
 pca.no         <- dim(GSE85728.vsd.PCA$x)[2]
@@ -295,3 +333,5 @@ GSE85728.PCA.ggplot <- as.data.frame(GSE85728.vsd.PCA$x) %>%
 (GSE85728.PCA.ggplot)
 
 ```
+## Discussion
+## References
