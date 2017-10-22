@@ -1,5 +1,22 @@
-# Developing advanced R tutorials for genomic data analysis
+# Advanced R Tutorials for Genomic Data Analysis
 
-If you use R for genomic data analysis, then this project might be for you. How much of your advanced R knowledge was earned through serendipitous discovery of random online tutorials and/or endless trial and error? If you're anything like me, the answer is frustratingly a lot. I would like to make it easier for the next generation of bioinformaticians to hit the ground running with R. Unless the package you want to use is on Bioconductor, it can be difficult to find more intermediate or advanced tutorials online, let alone examples focused on genomics. I propose that we pool our collective knowledge of R and build a set of tutorials covering advanced topics related to genomics. Personally, I would like to see more tutorials on how to use the powerful packages within the tidyverse (e.g., ggplot2, dplyr, tidyr and purrr) for genomic data analysis as well as examples showing how to leverage packages like knitr and rmarkdown for sharing reproducible code. I would like us to brainstorm additional ideas and reach a consensus on which tutorials we will develop over the course of three days. I envision that these tutorials could easily be combined to form the basis of hands-on workshops. All material will be openly developed and made freely available online under a CC-BY license. Given the project's goal, you should be moderately experienced with R. If you have more than 1-2 years of continuous experience with R in genomics, you probably have something to contribute to our effort. Other than knowledge of R, I think the second most important criteria is diversity: diverse expertise, diverse backgrounds, and diverse people. If you are excited by the idea and feel like you have something to contribute, I encourage you to apply!
+![Hackseq 2017](https://img.shields.io/badge/Hackseq-2017-cccccc.svg)
+![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)
 
-Team Lead : Bruno Grande | bgrande@sfu.ca | @brunogrande | Grad Student | Simon Fraser University
+This repository features a collection of advanced R tutorials for genomic data analysis. Check them out here: 
+
+**R Tutorials:** [https://hackseq.github.io/2017_project_5/](https://hackseq.github.io/2017_project_5/)
+
+This idea is born out of the realization that much of the more advanced domain-specific knowledge needed for genomic data analysis is acquired through serendipitous discovery and extensive experience. The aim of this project is to pool this hard-fought collective knowledge and organize it into consistent modular tutorials. 
+
+## Contributions
+
+This is a collaborative project, so all contributions are welcome! Please review the [contribution guidelines](CONTRIBUTING.md) and propose a tutorial idea by [opening an issue](https://github.com/hackseq/2017_project_5/issues/new). This will give the opportunity to the community to provide valuable feedback before you create your tutorial. 
+
+## Issues
+
+If you encounter any problems, please [file an issue](https://github.com/hackseq/2017_project_5/issues/new) along with a detailed description.
+
+## License
+
+These tutorials are covered under the terms of the [MIT license](LICENSE). 
