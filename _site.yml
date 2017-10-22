@@ -27,7 +27,7 @@ navbar:
           href:
         - text: "---------"
         - text: "Reporting"
-        - text: "Yisong's tutorial (rmarkdown)"
+        - text: "Yisong's tutorial (rmarkdown) -- Coming soon"
           href:
         - text: "Integration of Genomic Analytic Results as a Multi-tab Excel Sheet with Package 'xlsx'"
           href:
