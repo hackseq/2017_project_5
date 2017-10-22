@@ -1,7 +1,7 @@
 ---
 title: "Hackathon-Driven Tutorial Development"
 subtitle: "Lessons from Hackseq 2017"
-author: "Bruno, Annie, Arjun, Florian, Peter and Yisong"
+author: "Bruno 🇨🇦, Annie 🇨🇦, Arjun 🇨🇦, Florian 🇫🇷, Peter 🇨🇦 and Yisong 🇨🇳"
 date: "October 22nd, 2017"
 output:
   xaringan::moon_reader:
@@ -18,24 +18,101 @@ options(htmltools.dir.version = FALSE)
 
 # How documented are your tools?
 
-Different levels of documentation
+**Different levels of documentation**
     
-    1. No documentation at all
-        * Lame...
-    2. Function documentation (inputs and outputs)
-        * The bare minimum
-    3. Vignettes (example use cases)
-        * The most useful! 
+1. No documentation at all
+    * Lame...
+    
+2. Function documentation (inputs and outputs)
+    * The bare minimum
+    * Required for CRAN submission
+    
+3. Vignettes (example use cases)
+    * The most useful! 
+    * Required for Bioconductor submission
+    
+---
+
+class: center, middle, inverse
+
+# Our project goal 
+
+## To organize our hard-fought collective knowledge into modular tutorials that use a common dataset
 
 ---
-class: center, middle
 
-# xaringan
+# Our tutorials
 
-### /ʃæ.'riŋ.ɡæn/
+* Pipelines
+    * Doing all your analysis in R
+
+* Data Wrangling and Analysis
+    * Simplified eQTL analysis in R [WIP]
+    * Analysis results in a consistent data structure
+    * Genomic data analysis with large matrices in R
+
+* Data Vizualization
+    * Unsupervised clustering
+
+* Reporting
+    * Authentic code in wet lab, bridging dry and wet partners [WIP]
+    * Integration of genomic analytic results as a multi-tab Excel sheet with 'xlsx'
 
 ---
-class: inverse, center, middle
 
-# Get Started
+# Benefits of hackathon-driven tutorial development
 
+* Motivating that everyone is working towards the same goal
+
+* You can cover more ground as a group
+
+* Immediate peer review of your tutorials
+
+* You can tap into the group's collective knowledge
+    * Different perspectives
+    * Tutorials can be the distillate of this collective knowledge
+    * Faster problem-solving
+    
+---
+
+# Challenges of hackathon-driven tutorial development
+
+* Picking a focus
+    * Which audience do you want to target?
+    * Do you want to create introductory or more advanced tutorials?
+    * Which topics aren't already covered online?
+
+* Picking a common dataset
+    * Openly accessible
+    * Relatively tidy
+    * Interesting and relevant to target audience
+    * Multi-dimensional
+    * Not too small nor too big
+
+---
+
+# Virtual participation
+
+* Increasing the accessibility of your events
+
+* Hackathons are particularly amenable to remote participation
+    * Git and GitHub for code collaboration and task management
+    * Slack for instant messaging
+
+* Especially simple with tutorials
+    * They can be developed independently from others on the team
+    * While working towards the same goal
+    * While benefitting from the collective knowledge
+
+* Some drawbacks
+    * No participation in the socials
+    * Indirect networking 
+    * Constant and clear communication is key! 
+
+---
+
+class: center, middle, inverse
+
+# Bye bye Hackseq 2017! 
+
+### Already looking forward to Hackseq 2018! 
