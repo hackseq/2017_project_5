@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Load required R packages
 
 ```{R}
+Sys.setenv(JAVA_HOME='C:/Program Files/Java/jdk-9.0.1') # for 64-bit version
 library(xlsx)
 library(animation)
 library(readr)
@@ -75,31 +76,40 @@ We are going to create a new work sheet for a new analysis, within the same work
   sheet1<-createSheet(wb, sheetName = "Expression")
   
   ##Generate an expression figure according to stage
-  expr.data<-read.csv("exprData.csv.gz")
-  expr.gene<-as.data.frame(expr.data[gene,])
+  download.file("https://github.com/hackseq/2017_project_5/raw/master/data/exprData.csv.gz", "exprData.csv.gz")
+  exprData<-read.csv("exprData.csv.gz")
+  expr.gene<-subset(exprData, exprData$GeneId==gene)
+  expr.gene.graph<-as.data.frame(t(expr.gene))
+  expr.gene.graph<-mutate(expr.gene.graph, GENE=as.character(expr.gene.graph[1,1]))
+  expr.gene.graph<-expr.gene.graph[2:nrow(expr.gene.graph),]
 ```
+
+We can save the expression table in worksheet1
+```{R}
+  addDataFrame(expr.gene.graph, sheet1, startRow = 1, colnamesStyle = cs)
+```
+
 
 Here our expression analysis can be virsualized with a figure
 
 ```{R}
   ##Make an expression figure
-  gene.boxplot<-ggplot(expr.gene, aes(x = STAGE, y = log2(Expression), fill=STAGE)) +
+  gene.boxplot<-ggplot(expr.gene.graph, aes(x=GENE, y=as.numeric(as.character(expr.gene.graph$GENE)))) +
     geom_boxplot() +
-    labs(x = "Tumor Stage",
+    labs(x = "Gene",
          y = "Expression (Log2 transformed)",
          title = paste0(("Expression of "),gene))+
     theme(plot.title = element_text(hjust = 0.5),
-          axis.text.x = element_text(size=6))+
-    stat_compare_means(comparisons = my_comparisons, label = "p.signif")+
-    stat_compare_means(label.y = min(log2(dataClin.gene$Expression))-1)
+          axis.text.x = element_text(size=6))
     
 ```
 
 One way of storing the figure in our work sheet is to save it to an external file first, then import the figure to our data
+Here, we are saving our expression figure on worksheet1, to avoid overlapping with our data table we load on this sheet earlier, we will load it onto column 6
 
 ```{R}
   ggsave(gene.boxplot, filename="Expression.figure.png")
-  addPicture("Expression.figure.png", sheet1, scale=1, startRow=31, startColumn=12)
+  addPicture("Expression.figure.png", sheet1, scale=1, startRow=1, startColumn=6)
 ```  
 
 We can store unlimited number of data sheets or figure in a single workbook, on multiple worksheets. Create as many new sheets as needed and load the results data table or figure onto them.
@@ -142,7 +152,7 @@ Example of storing results of PubMed text-mining results on a worksheet
   gene.PMID<-get_PMCIDS(gene.abs)
   ##extract sentence from abs for gene
   gene.sentences<-Give_Sentences(gene, gene.abs)
-  addDataFrame(gene.PMID, sheet6, colnamesStyle = cs)
+  addDataFrame(gene.PMID, sheet3, colnamesStyle = cs)
   addDataFrame(unlist(gene.sentences), sheet3, startRow = 6, colnamesStyle = cs)
 ``` 
 
