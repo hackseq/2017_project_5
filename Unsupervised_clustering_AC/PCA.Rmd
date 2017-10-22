@@ -13,7 +13,78 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Principal component analysis, or PCA, is a method by which high-dimensional data is 'reduced' to a few principle components, which are then plotted against one another in a simple visualisation. In analysis of human gene expression data, there are 20,000 genes, and it would be impossible to plot this in such a way that a human would be able to comprehend and interpret this meaningfully. PCA therefore takes the principal components that add most of the variation to the data, and plots in two or three dimensions according to these variables, causing the data points to cluster within the plotting space, thereby elucidating the distinct populations. This is known as unsupervised, because the user does not input any categories to assign each sample to, nor the number of clusters to obtain.
 
+```{r}
+expressionData <- read.table("/Users/annie/Desktop/2017_project_5/Unsupervised_clustering_AC/data.txt")
 
+#The data needs to be transposed, such that variables (genes) are columns and samples are rows
+data_for_PCA <- t(expressionData)
+
+
+#The cmdscale function calculates a matrix of dissimilarities (mds) from the transposed data and will also provide information about the proportion of explained variance by calculating Eigen values. k represents the maximum dimension of the space which the data are to be represented in
+mds <- cmdscale(dist(data_for_PCA), k=3, eig=TRUE)  
+
+#Plotting this variable as a percentage will help you determine how many components can explain the variability in your dataset and thus how many dimensions to look at
+# k = the maximum dimension of the space which the data are to be represented in
+# eig = indicates whether eigenvalues should be returned
+eig_pc <- mds$eig * 100 / sum(mds$eig)
+b <- barplot(eig_pc,
+     las=1,
+     xlab="Dimensions", 
+     ylab="Proportion of explained variance (%)", y.axis=NULL,
+     col="darkgrey")
+
+#The first four components explain ~50% of the data, which is good
+mds <- cmdscale(dist(data_for_PCA))
+plot(mds[,1], -mds[,2], type="n", xlab="Dimension 1", ylab="Dimension 2", main="")
+text(mds[,1], -mds[,2], rownames(mds), cex=0.8) 
+
+#It's beneficial to use another method, to validate your results. The main issue here is that PCA works best with more samples than dimensions, so with 21,800 probes it would be best either to have >21800 samples or to only select the top ~100 expressed genes and reduce dimensionality from there.
+prcomp <- prcomp(data_for_PCA, retx = TRUE, center = TRUE, scale. = FALSE,
+                     tol = NULL, rank. = NULL)
+plot(prcomp)
+biplot(prcomp)
+```
+## NMF
+
+NMF stands for non-negative matrix factorisation and is employed in image and text reduction. Two matrices are calculated that muultiply to approximately the original matrix; one of the main methods used to iteratively calculate the matrices is linear regression.
+
+```{r}
+
+suppressPackageStartupMessages(library(NMF)) 
+aout <- nmf(expressionData,2)
+aout.3 <- nmf(expressionData,3)
+aout.4 <- nmf(expressionData,4)
+
+#The W and H variables within the 'fit' parameter indicate the matrix breakdown
+w <- aout@fit@W
+dim(w)
+h <- aout@fit@H
+dim(h)
+
+fit(aout)
+#mtrnew@grey <- approxa
+coefmap(aout)
+coefmap(aout.3)
+coefmap(aout.4)
+```
+
+## Hierarchical clustering
+
+Hierarchical clustering builds a relationship between samples from the bottom up, i.e. from the starting belief that all samples are separate and not related to one another. Each point is this a cluster. The two nearest clusters are identified and combined. Depending on how 'nearest' is defined, various different methods and endpoints are used:
+- Find the maximum possible distance between points belonging to two different clusters = complete linkage clustering
+- Find the minimum possible distance between points belonging to two different clusters = single linkage clustering
+- Find all possible pairwise distances for points belonging to two different clusters and then calculate the average = mean linkage clustering
+- Find the centroid of each cluster and calculate the distance between centroids of two clusters = centroid linkage clustering
+
+```{r}
+clusters <- hclust(dist(data_for_PCA[1:100]))
+plot(clusters)
+
+
+
+```
+
+The first hundred data points indicate the presence of four distinct clusters.
 
  <http://rmarkdown.rstudio.com>.
 
