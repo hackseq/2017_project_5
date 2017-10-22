@@ -5,34 +5,64 @@ date: '2017-10-20'
 output: html_document
 ---
 
-This is the start of an simplified eQTL analysis. The goal is to highlight different packages which can make this easier and a general overview of what it is. 
-
+This is the start of a simplified eQTL analysis. The goal is to highlight different packages which can make this easier and a general overview of what it is. 
 
 First things first, lets load the packages we will primarily use. 
-```{r}
+```{r, }
 library(biomaRt)
 mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
 
 library(data.table)
 library(magrittr) # This is to be able to use the pipe. 
+library(bigsnpr)
 #
 ```
 
-Next thing we want to upload our expression data, in the form of a count table. This means that the RNA-seq data has already been aligned and counted. 
+Now we need to prepare the SNP data. I used Florians tutorial: https://github.com/hackseq/2017_project_5/blob/master/privefl/memory-mapping.Rmd
 ```{r}
-exprData <- read.table("~/Downloads/GSE85567_RNASeq_normalizedcounts.txt", header = TRUE, row.names = 1)
-metaData <- read.table("~/Downloads/GSE85566_metadata.txt", header= TRUE, row.names = 1, sep= ",")
+tmpfile <- tempfile()
+base <- paste0(
+  "https://github.com/gabraham/flashpca/raw/master/HapMap3/",
+  "1kg.ref.phase1_release_v3.20101123_thinned_autosomal_overlap")
+exts <- c(".bed", ".bim", ".fam")
+purrr::map2_int(paste0(base, exts), paste0(tmpfile, exts), ~download.file(.x, .y))
+rdsfile <- snp_readBed(paste0(tmpfile, ".bed"), tempfile())
+
+bigsnp <- snp_attach(rdsfile)
+(G <- bigsnp$genotypes)
+object.size(G)
+
+G.matrix <- G[]
+G.matrix <- as.data.frame(G.matrix)
+format(object.size(G.matrix), units = "MB")
+
+row.names(G.matrix) <- bigsnp$fam$sample.ID
+colnames(G.matrix) <- bigsnp$map$marker.ID
+
+# write.csv(G.matrix,"./data/snpData.csv")
+# write.csv(bigsnp$map, "./data/snpMetaData.csv")
+# write.csv(bigsnp$fam, "./data/metaData.csv")
+
+### If continuing, use these variable names now.
+snpData <- G.matrix
+snpMetaData <- bigsnp$map
+metaData <- bigsnp$fam
+rm(G.matrix, bigsnp, tmpfile)
 ```
+
+
+```{r}
+
+```
+
 
 So, what are eQTLs? Expression quantitative trait loci (eQTLs) are genomic loci that contribute to variation in expression levels of mRNAs. So for each gene, the expression level and mutations are checked to see if there is an association. This indicates whether certain mutation(s) contribute to changes in expression. (plagarized from wiki :D)
 ```{r}
-
-
-mapStuff <- function(genes) {
-  geneList <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id", "hgnc_symbol", "description", "start_position", "end_position"),values=genes,mart=mart)
-  geneList <- geneList %>% dplyr::select(-c(ensembl_gene_id))
-  return(geneList)
-}
-rownames(exprData)[1:10] %>% mapStuff()
+#mapStuff <- function(genes) {
+#  geneList <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id", "hgnc_symbol", "description", "start_position", "end_position"),values=genes,mart=mart)
+#  geneList <- geneList %>% dplyr::select(-c(ensembl_gene_id))
+#  return(geneList)
+#}
+#rownames(exprData)[1:10] %>% mapStuff()
 ```
 
