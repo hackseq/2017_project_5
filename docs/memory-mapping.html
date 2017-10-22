@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Florian Privé" />
+
+<meta name="date" content="2017-10-21" />
+
+<title>Genomic data analysis with large matrices in R</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Genomic Data Analysis in R</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="about.html">
+    <span class="fa fa-user"></span>
+     
+    About
+  </a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-file"></span>
+     
+    Tutorials
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li class="dropdown-header">Pipelines</li>
+    <li>
+      <a href="all-in-R.html">Doing all your analysis in R</a>
+    </li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Data Wrangling and Analysis</li>
+    <li class="dropdown-header">Simplified eQTL analysis in R</li>
+    <li>
+      <a href="tidyverse-list-columns.html">Analysis results in a consistent data structure</a>
+    </li>
+    <li>
+      <a href="memory-mapping.html">Genomic data analysis with large matrices in R</a>
+    </li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Data Vizualization</li>
+    <li class="dropdown-header">Unsupervised clustering</li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Reporting</li>
+    <li class="dropdown-header">Yisong's tutorial (rmarkdown)</li>
+    <li class="dropdown-header">Integration of Genomic Analytic Results as a Multi-tab Excel Sheet with Package 'xlsx'</li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="http://www.hackseq.com/">hackseq</a>
+</li>
+<li>
+  <a href="https://github.com/hackseq/2017_project_5">
+    <span class="fa fa-github"></span>
+     
+    GitHub
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Genomic data analysis with large matrices in R</h1>
+<h4 class="author"><em>Florian Privé</em></h4>
+<h4 class="date"><em>October 21, 2017</em></h4>
+
+</div>
+
+
+<p>For multiple genomic data, most of the information can be stored as matrices. The most striking example is with SNP data, which can be stored as matrices with thousands to hundreds of thousands of rows (samples) with hundreds of thousands to dozens of millions of columns (SNPs) <span class="citation">(Bycroft et al. 2017)</span>. This results in datasets of GygaBytes to TeraBytes of data.</p>
+<p>Other fields in genomics, such as proteomics or expression data, use data stored as matrices potentially of size larger than available memory.</p>
+<p>To address large data size in R, we can use memory-mapping for accessing large matrices stored on disk instead of in RAM. This has existed in R for several years thanks to package bigmemory <span class="citation">(Kane, Emerson, and Weston 2013)</span>.</p>
+<p>More recently, two packages which use the same principle as bigmemory have been developed: bigstatsr and bigsnpr <span class="citation">(Privé, Aschard, and Blum 2017)</span>. Package bigstatsr implements many statistical tools for several types of Filebacked Big Matrices (FBMs), making it usable for any type of genomic data that can be encoded as a matrix. The statistical tools in bigstatsr include implementation of multivariate sparse linear models, Principal Component Analysis (PCA), matrix operations, and numerical summaries. Package bigsnpr implements algorithms which are specific to the analysis of SNP arrays, making use of already implemented features in package bigstatsr.</p>
+<p>In this small tutorial, we’ll see the potential benefits of using memory-mapping instead of standard R matrices in memory, by using bigstatsr and bigsnpr.</p>
+<div id="examples" class="section level2">
+<h2>Examples</h2>
+<div id="example-of-expression-data" class="section level3">
+<h3>Example of expression data</h3>
+<p>Let’s use the NCBI GEO archive to get some example expression data <span class="citation">(Barrett et al. 2012)</span>.</p>
+<pre class="r"><code># http://bioconductor.org/packages/release/bioc/html/GEOquery.html
+suppressMessages(library(GEOquery))
+
+# All data
+gds &lt;- getGEO(&quot;GDS3929&quot;)</code></pre>
+<pre><code>## File stored at:</code></pre>
+<pre><code>## /tmp/RtmpOTdb2V/GDS3929.soft.gz</code></pre>
+<pre class="r"><code>str(gds, max.level = 2)</code></pre>
+<pre><code>## Formal class &#39;GDS&#39; [package &quot;GEOquery&quot;] with 3 slots
+##   ..@ gpl      :Formal class &#39;GPL&#39; [package &quot;GEOquery&quot;] with 2 slots
+##   ..@ dataTable:Formal class &#39;GEODataTable&#39; [package &quot;GEOquery&quot;] with 2 slots
+##   ..@ header   :List of 23</code></pre>
+<pre class="r"><code>format(object.size(gds), units = &quot;MB&quot;)</code></pre>
+<pre><code>## [1] &quot;37.1 Mb&quot;</code></pre>
+<pre class="r"><code>df &lt;- gds@dataTable@table
+format(object.size(df), units = &quot;MB&quot;)</code></pre>
+<pre><code>## [1] &quot;37 Mb&quot;</code></pre>
+<pre class="r"><code># Part of the data that can be encoded as a matrix
+mat &lt;- t(df[-(1:2)])
+dim(mat)</code></pre>
+<pre><code>## [1]   183 24526</code></pre>
+<pre class="r"><code>format(object.size(mat), units = &quot;MB&quot;)</code></pre>
+<pre><code>## [1] &quot;35.6 Mb&quot;</code></pre>
+<p>In this data, 96% of the information can be encoded as a matrix. For larger data, this could increase to more than 99%. Let us store this as a Filebacked Big Matrix (FBM).</p>
+<pre class="r"><code># https://github.com/privefl/bigstatsr
+library(bigstatsr)
+fbm &lt;- big_copy(mat)
+# Same data?
+all.equal(fbm[], mat, check.attributes = FALSE)</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code># Size in memory
+format(object.size(fbm), units = &quot;MB&quot;)</code></pre>
+<pre><code>## [1] &quot;0 Mb&quot;</code></pre>
+<pre class="r"><code># File where the data is backed
+fbm$backingfile</code></pre>
+<pre><code>## [1] &quot;/tmp/RtmpOTdb2V/file6b912eee7e5f.bk&quot;</code></pre>
+<p>So, now the matrix is stored on disk and basically takes no memory. So, using FBMs would take 100 times less space to store the data.</p>
+<p>For omic data, computing PCA (or SVD) is sometimes useful to assess the structure in the data. Let’s do this.</p>
+<pre class="r"><code>system.time(
+  svd &lt;- svd(scale(mat), nu = 10, nv = 10)
+)</code></pre>
+<pre><code>##    user  system elapsed 
+##   2.265   0.042   2.316</code></pre>
+<pre class="r"><code>plot(svd$u)</code></pre>
+<p><img src="memory-mapping_files/figure-html/unnamed-chunk-3-1.png" width="65%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>system.time(
+  svd2 &lt;- big_SVD(fbm, big_scale(), k = 10)
+)</code></pre>
+<pre><code>## (2)</code></pre>
+<pre><code>##    user  system elapsed 
+##   0.253   0.004   0.257</code></pre>
+<pre class="r"><code>plot(svd2)</code></pre>
+<p><img src="memory-mapping_files/figure-html/unnamed-chunk-4-1.png" width="65%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(svd2, type = &quot;scores&quot;)</code></pre>
+<p><img src="memory-mapping_files/figure-html/unnamed-chunk-4-2.png" width="65%" style="display: block; margin: auto;" /></p>
+<p>The goal of memory-mapping is to not have all the data in memory. This force programmers to think more before implementing algorithms. This can lead to implementations that can be much faster than current R implementations. Moreover, data stored on disk is shared between processes so that parallelism in algorithms can be implemented more easily and efficiently, for example removing the need to copy the data.</p>
+</div>
+<div id="example-of-snp-data" class="section level3">
+<h3>Example of SNP data</h3>
+<p>Let’s use some 1000 Genomes data from <a href="https://github.com/gabraham/flashpca/tree/master/HapMap3">Gad Abraham’s GitHub repository</a> which have been filtered and quality-controled.</p>
+<pre class="r"><code>tmpfile &lt;- tempfile()
+base &lt;- paste0(
+  &quot;https://github.com/gabraham/flashpca/raw/master/HapMap3/&quot;,
+  &quot;1kg.ref.phase1_release_v3.20101123_thinned_autosomal_overlap&quot;)
+exts &lt;- c(&quot;.bed&quot;, &quot;.bim&quot;, &quot;.fam&quot;)
+purrr::map2_int(paste0(base, exts), paste0(tmpfile, exts), ~download.file(.x, .y))</code></pre>
+<pre><code>## [1] 0 0 0</code></pre>
+<p>First, we have to transform these data in PLINK format to an FBM. In package bigsnpr, function <code>snp_readBed</code> is provided to do just that. It is implemented with Rcpp, which makes it very fast. Package Rcpp makes easy to use C++ code in R and with R objects.</p>
+<pre class="r"><code># https://github.com/privefl/bigsnpr
+library(bigsnpr)
+rdsfile &lt;- snp_readBed(paste0(tmpfile, &quot;.bed&quot;), tempfile())
+
+bigsnp &lt;- snp_attach(rdsfile)
+(G &lt;- bigsnp$genotypes)</code></pre>
+<pre><code>## A Filebacked Big Matrix of type &#39;code 256&#39; with 1092 rows and 14079 columns.</code></pre>
+<pre class="r"><code>object.size(G)</code></pre>
+<pre><code>## 656 bytes</code></pre>
+<pre class="r"><code>G.matrix &lt;- G[]
+format(object.size(G.matrix), units = &quot;MB&quot;)</code></pre>
+<pre><code>## [1] &quot;117.3 Mb&quot;</code></pre>
+<p>For large SNP data, this format can save us a lot of memory.</p>
+<pre class="r"><code>system.time(
+  svd &lt;- svd(scale(G.matrix), nu = 10, nv = 10)
+)</code></pre>
+<pre><code>##    user  system elapsed 
+##   9.154   0.741   9.895</code></pre>
+<pre class="r"><code>plot(svd$u)</code></pre>
+<p><img src="memory-mapping_files/figure-html/unnamed-chunk-8-1.png" width="65%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>system.time(
+  svd2 &lt;- big_SVD(G, big_scale(), k = 10)
+)</code></pre>
+<pre><code>## (2)</code></pre>
+<pre><code>##    user  system elapsed 
+##   0.941   0.045   0.986</code></pre>
+<pre class="r"><code>plot(svd2)</code></pre>
+<p><img src="memory-mapping_files/figure-html/unnamed-chunk-8-2.png" width="65%" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(svd2, type = &quot;scores&quot;)</code></pre>
+<p><img src="memory-mapping_files/figure-html/unnamed-chunk-8-3.png" width="65%" style="display: block; margin: auto;" /></p>
+<p>And with smart algorithms, we can save a lot of computation time.</p>
+</div>
+</div>
+<div id="learn-more" class="section level2">
+<h2>Learn more</h2>
+<p>You can find vignettes and documentation of packages bigstatsr and bigsnpr in their GitHub repositories. In order to find more details about memory-mapping and packages bigstatsr and bigsnpr, please refer to the corresponding paper <span class="citation">(Privé, Aschard, and Blum 2017)</span>.</p>
+<p>You’ll see for example that when using memory-mapping, it’s possible to make a parallelized algorithm for computing partial Singular Value Decomposition that is lightning fast, using an already implemented algorithm in another R package.</p>
+<p><img src="https://github.com/privefl/paper-packages/raw/master/figures/benchmark-pca.png" width="65%" style="display: block; margin: auto;" /></p>
+<p>You’ll also see that it is possible to make a Genome-Wide Association Study (GWAS) on 500,000 individuals genotyped on more than 1,000,000 SNPs, thus analyzing more than 100 GB of compressed data on a single desktop computer.</p>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2>References</h2>
+<div id="refs" class="references">
+<div id="ref-barrett2012ncbi">
+<p>Barrett, Tanya, Stephen E Wilhite, Pierre Ledoux, Carlos Evangelista, Irene F Kim, Maxim Tomashevsky, Kimberly A Marshall, et al. 2012. “NCBI Geo: Archive for Functional Genomics Data Sets—update.” <em>Nucleic Acids Research</em> 41 (D1). Oxford University Press: D991–D995.</p>
+</div>
+<div id="ref-Bycroft166298">
+<p>Bycroft, Clare, Colin Freeman, Desislava Petkova, Gavin Band, Lloyd T Elliott, Kevin Sharp, Allan Motyer, et al. 2017. “Genome-Wide Genetic Data on  500,000 Uk Biobank Participants.” <em>BioRxiv</em>. Cold Spring Harbor Laboratory. doi:<a href="https://doi.org/10.1101/166298">10.1101/166298</a>.</p>
+</div>
+<div id="ref-Kane2013">
+<p>Kane, Michael J, John W Emerson, and Stephen Weston. 2013. “Scalable Strategies for Computing with Massive Data.” <em>Journal of Statistical Software</em> 55 (14): 1–19. doi:<a href="https://doi.org/10.18637/jss.v055.i14">10.18637/jss.v055.i14</a>.</p>
+</div>
+<div id="ref-Prive190926">
+<p>Privé, Florian, Hugues Aschard, and Michael G. B. Blum. 2017. “Efficient Management and Analysis of Large-Scale Genome-Wide Data with Two R Packages: Bigstatsr and Bigsnpr.” <em>BioRxiv</em>. Cold Spring Harbor Laboratory. doi:<a href="https://doi.org/10.1101/190926">10.1101/190926</a>.</p>
+</div>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

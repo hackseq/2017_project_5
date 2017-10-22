@@ -1,0 +1,43 @@
+name: "Hackseq 2017 - Tutorials"                                  # CHANGE HERE 
+output_dir: "docs"
+exclude: ["privefl", "abaghela", "data", "pzhang", "zhenys", "Unsupervised_clustering_AC"]
+navbar:
+  title: "Genomic Data Analysis in R"
+  left:
+    - text: "About"
+      icon: fa-user 
+      href: about.html
+    - text: "Tutorials"
+      icon: fa-file 
+      menu:
+        - text: "Pipelines"
+        - text: "Doing all your analysis in R"
+          href: all-in-R.html
+        - text: "---------"
+        - text: "Data Wrangling and Analysis"
+        - text: "Simplified eQTL analysis in R"
+          href:
+        - text: "Analysis results in a consistent data structure"
+          href: tidyverse-list-columns.html
+        - text: "Genomic data analysis with large matrices in R"
+          href: memory-mapping.html
+        - text: "---------"
+        - text: "Data Vizualization"
+        - text: "Unsupervised clustering"
+          href:
+        - text: "---------"
+        - text: "Reporting"
+        - text: "Yisong's tutorial (rmarkdown)"
+          href:
+        - text: "Integration of Genomic Analytic Results as a Multi-tab Excel Sheet with Package 'xlsx'"
+          href:
+  right:
+    - text: "hackseq"
+      href: http://www.hackseq.com/
+    - text: "GitHub"
+      icon: fa-github
+      href: https://github.com/hackseq/2017_project_5
+output:
+  html_document:
+    theme: cosmo
+    highlight: textmate

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Florian Privé" />
+
+<meta name="date" content="2017-10-21" />
+
+<title>Doing all your analysis in R</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Genomic Data Analysis in R</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="about.html">
+    <span class="fa fa-user"></span>
+     
+    About
+  </a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-file"></span>
+     
+    Tutorials
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li class="dropdown-header">Pipelines</li>
+    <li>
+      <a href="all-in-R.html">Doing all your analysis in R</a>
+    </li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Data Wrangling and Analysis</li>
+    <li class="dropdown-header">Simplified eQTL analysis in R</li>
+    <li>
+      <a href="tidyverse-list-columns.html">Analysis results in a consistent data structure</a>
+    </li>
+    <li>
+      <a href="memory-mapping.html">Genomic data analysis with large matrices in R</a>
+    </li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Data Vizualization</li>
+    <li class="dropdown-header">Unsupervised clustering</li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Reporting</li>
+    <li class="dropdown-header">Yisong's tutorial (rmarkdown)</li>
+    <li class="dropdown-header">Integration of Genomic Analytic Results as a Multi-tab Excel Sheet with Package 'xlsx'</li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="http://www.hackseq.com/">hackseq</a>
+</li>
+<li>
+  <a href="https://github.com/hackseq/2017_project_5">
+    <span class="fa fa-github"></span>
+     
+    GitHub
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Doing all your analysis in R</h1>
+<h4 class="author"><em>Florian Privé</em></h4>
+<h4 class="date"><em>October 21, 2017</em></h4>
+
+</div>
+
+
+<p>A biological analysis is sometimes more appropriately called a pipeline. This is because it generally consists of many steps, using many different software and data formats. Yet, these analysis pipelines are becoming very complex and usually makes use of many bash/perl scripts. For people like me who don’t really know that much bash or perl, it can be really hard to understand those scripts.</p>
+<p>What is important in these pipelines? To list what comes to my mind:</p>
+<ul>
+<li>use the command line</li>
+<li>manipulate files</li>
+<li>use regular expressions</li>
+<li>visualize results</li>
+<li>report results</li>
+</ul>
+<p>I think we can do each of these operations in R. And I think we should.</p>
+<p>The main reason would be to put all your analysis in a single notebook where you have all your code, results and possibly some writing. Using notebooks is good practice and makes it possible to have a <strong>fully reproducible analysis</strong>, which will a standard in years to come. Another reason is simply that it’s easier!</p>
+<p>In this tutorial, I’ll show an example of a moderately complex analysis of the HapMap3 data (phase III), all in R.</p>
+<div id="example-with-hapmap3" class="section level2">
+<h2>Example with HapMap3</h2>
+<div id="get-the-data" class="section level3">
+<h3>Get the data</h3>
+<p>Don’t just give a link to the data, use an R command to download the data directly. Mouse clicks prevent reproducibility.</p>
+<pre class="r"><code># Get the URL of the data
+site &lt;- &quot;https://ftp.ncbi.nlm.nih.gov/hapmap/genotypes/2009-01_phaseIII/plink_format/&quot;
+name &lt;- &quot;hapmap3_r2_b36_fwd.qc.poly&quot;
+ext &lt;- &quot;.tar.bz2&quot;
+# Download the file 
+download.file(paste0(site, name, ext), tmp &lt;- tempfile(fileext = ext))
+# Uncompress the downloaded file in directory data/
+untar(tmp, exdir = &quot;data&quot;)</code></pre>
+</div>
+<div id="use-plink-to-combine-datasets" class="section level3">
+<h3>Use PLINK to combine datasets</h3>
+<p>PLINK is a very efficient command-line software very useful for preprocessing of GWA data <span class="citation">(Chang et al. 2015; S. Purcell et al. 2007)</span>.</p>
+<pre class="r"><code>plink &lt;- bigsnpr::download_plink()</code></pre>
+<pre class="r"><code>files &lt;- rev(list.files(&quot;data/hapmap3_pop&quot;, full.names = TRUE))
+write(files[-(1:2)], tmp &lt;- tempfile(), ncolumns = 2)
+library(glue)
+system(glue(&quot;{plink} --file {tools::file_path_sans_ext(files[1])}&quot;,
+            &quot; --merge-list {tmp}&quot;,
+            &quot; --out data/hapmap3&quot;))</code></pre>
+</div>
+<div id="use-plink-for-quality-control" class="section level3">
+<h3>Use PLINK for quality control</h3>
+<pre class="r"><code>system(glue(&quot;{plink} --bfile data/hapmap3&quot;,
+            &quot; --maf 0.05&quot;,
+            &quot; --geno 0.05&quot;, 
+            &quot; --hwe 1e-10&quot;, 
+            &quot; --autosome&quot;,
+            &quot; --make-bed&quot;,
+            &quot; --out data/hapmap3_qc&quot;))</code></pre>
+<p>There exists much more quality control steps but it is not the objective of this tutorial. For details, please refer to <span class="citation">(Anderson et al. 2010)</span>.</p>
+</div>
+<div id="get-a-pruned-dataset" class="section level3">
+<h3>Get a pruned dataset</h3>
+<p>First, we need to remove long-range LD regions and use pruning.</p>
+<pre class="r"><code># Write long-range LD regions in a file
+bigsnpr:::write.table2(bigsnpr::LD.wiki34, tmp &lt;- tempfile())
+# Get pruned SNPs
+system(glue(&quot;{plink} --bfile data/hapmap3_qc&quot;,
+            &quot; --exclude {tmp} --range&quot;,
+            &quot; --indep-pairwise 50 5 0.2&quot;,
+            &quot; --out {tmp}&quot;))
+# Filter the data again
+system(glue(&quot;{plink} --bfile data/hapmap3_qc&quot;,
+            &quot; --extract {tmp}.prune.in&quot;,
+            &quot; --make-bed&quot;,
+            &quot; --out {tmp}&quot;))</code></pre>
+</div>
+<div id="compute-principal-components" class="section level3">
+<h3>Compute Principal Components</h3>
+<pre class="r"><code># Get EIGENSOFT
+download.file(&quot;https://data.broadinstitute.org/alkesgroup/EIGENSOFT/EIG-6.1.4.tar.gz&quot;,
+              tmp2 &lt;- tempfile())
+smartpca &lt;- &quot;EIG-6.1.4/bin/smartpca&quot;
+untar(tmp2, files = smartpca)</code></pre>
+<pre class="r"><code>parfile &lt;- glue(&quot;{tmp}.pca.par&quot;)
+  
+## Renaming so that Eigensoft can recognize file type
+system(glue(&quot;cp {tmp}.bim {tmp}.pedsnp&quot;))  
+## Renaming so that Eigensoft can recognize file type
+system(glue(&quot;cp {tmp}.fam {tmp}.pedind&quot;))  
+writeLines(glue(
+  &quot;genotypename: {tmp}.bed
+  snpname: {tmp}.pedsnp
+  indivname: {tmp}.pedind
+  evecoutname: {tmp}.pca.evec
+  evaloutname: {tmp}.eval
+  altnormstyle: NO
+  numoutevec: 10
+  numoutlieriter: 0
+  numoutlierevec: 10
+  outliersigmathresh: 6
+  qtmode: 0
+  fastmode: 0&quot;
+), con = parfile)
+## PCA
+system(glue(&quot;{smartpca} -p {parfile}&quot;), ignore.stdout = TRUE)</code></pre>
+<pre class="r"><code># Get result and plot it (data.table is faster for reading/writing files)
+evec &lt;- data.table::fread(glue(&quot;{tmp}.pca.evec&quot;), 
+                          data.table = FALSE, skip = 1)
+
+library(ggplot2)
+bigstatsr:::MY_THEME(ggplot(evec)) + 
+  geom_point(aes(V2, V3)) +
+  labs(x = &quot;PC1&quot;, y = &quot;PC2&quot;)</code></pre>
+<p><img src="all-in-R_files/figure-html/unnamed-chunk-8-1.png" width="65%" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="discussion" class="section level2">
+<h2>Discussion</h2>
+<p>It would be easy to make functions that implements whole procedures in R thanks to system calls and package glue. This could make pipelines more understandable and fully reproducible.</p>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2>References</h2>
+<div id="refs" class="references">
+<div id="ref-anderson2010data">
+<p>Anderson, Carl A, Fredrik H Pettersson, Geraldine M Clarke, Lon R Cardon, Andrew P Morris, and Krina T Zondervan. 2010. “Data Quality Control in Genetic Case-Control Association Studies.” <em>Nature Protocols</em> 5 (9). Europe PMC Funders: 1564.</p>
+</div>
+<div id="ref-chang2015second">
+<p>Chang, Christopher C, Carson C Chow, Laurent CAM Tellier, Shashaank Vattikuti, Shaun M Purcell, and James J Lee. 2015. “Second-Generation Plink: Rising to the Challenge of Larger and Richer Datasets.” <em>Gigascience</em> 4 (1). BioMed Central: 7.</p>
+</div>
+<div id="ref-purcell2007plink">
+<p>Purcell, Shaun, Benjamin Neale, Kathe Todd-Brown, Lori Thomas, Manuel AR Ferreira, David Bender, Julian Maller, et al. 2007. “PLINK: A Tool Set for Whole-Genome Association and Population-Based Linkage Analyses.” <em>The American Journal of Human Genetics</em> 81 (3). Elsevier: 559–75.</p>
+</div>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -1,22 +1,47 @@
-ï»?---
-title: "hackseq"
-author: "Yisong Zhen"
-date: "October 21, 2017"
-output: html_document
+---
+title:   "Authetic code in wet lab, bridging dry and wet parterners"
+author:  "Yisong Zhen"
+date:    "October 21, 2017"
+bibliography: hackseq.bib
+csl: bioinformatics.csl
+output:  html_document
 ---
 
-```{r setup, include = FALSE}
+## Introduction
+The following is the authentic code in my on-going project to find the key 
+players in controlling left-right (L-R) patterning during heart development[@Chen2010-uk].
+Raw data is from wanglab's recent work [@Touma2016-ym].
 
+We have met problems in biomedicine field. The researching work is not fully 
+reproducible[@Prinz2011-nt;@Baker2015-tu]. 
+And data-sharing is also arguable in biomedicine researchers [@International_Consortium_of_Investigators_for_Fairness_in_Trial_Data_Sharing2016-vv.
+And source code is kept confidentially in individual labs.
+
+- Github to collaborate with researchers over the world in a big project
+- Rmarkdown to share the knowledge with biologists and perform reproducible research
+- Clean code style to facilitate the code maintenance in the future studies
+- Ask an interesting question first and then analyze the raw data
+
+
+My biological question is, what are the novel determinants involved in LR patterning?
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set( 
+    fig.align = 'center', 
+    out.width = '65%', 
+    fig.asp   = 0.45,
+    comment   = '#>')
+options(width = 85)
 pkgs <- c( 'tidyverse','Rsubread','org.Mm.eg.db','edgeR',
            'limma', 'DESeq2', 'genefilter','grid',
            'openxlsx','pheatmap','gridExtra','ggrepel',
            'annotate','clusterProfiler',
-           'GGally','RColorBrewer','ggbio',
+           'GGally','RColorBrewer','ggbio', 'ggreprel',
            'cluster','factoextra','ggpubr',
            'Rsamtools', 'devtools','parallel',
            'GenomicAlignments', 'BiocParallel',
            'reshape2', 'stringr','rtracklayer'
-           )
+         )
 load.lib <- lapply(pkgs, require, character.only = TRUE)
 ```
 
@@ -29,18 +54,23 @@ the required reference genomes and corresponding annotation files.
 mm10.genome.file     <- file.path('/mnt/date/igenomes/Mus_musculus/UCSC/mm10/Sequence/WholeGenomeFasta/genome.fa')
 rsubread.index.lib   <- file.path('/mnt/date/igenomes/rsubread')
 lncRmRNA.GRCm38.GTF.file  <- file.path('/mnt/date/genomelib/annotation/gencode/GRCm38.mouse.GTF')
-wangyb.output.dir         <- file.path('/home/zhenyisong/biodata/cardiodata/SRP082390/rsubread')
+GSE85728.output.dir       <- file.path('/home/zhenyisong/biodata/cardiodata/GSE85728/rsubread')
 raw.data.path             <- file.path('/home/zhenyisong/biodata/cardiodata/GSE85728')
 
 ```
 
 
-I get raw data from public database using aspera client (linux) to get my data from 
-NCBI as most RNA-seq data, particulary, lncRNA data are large in doing so to reach
-the deep seqeunce depth. But before running the demo code below, the user should install
+I get raw data from public database using aspera client (Linux) to get my data from 
+NCBI as most RNA-seq data, particularly, lncRNA data are large in doing so to reach
+the deep sequence depth. But before running the demo code below, the user should install
 his/her own aspera program locally.
 
 ```{r download raw data, eval = FALSE}
+"
+I used the system call in R to perform the aspera task. I first define the 
+parameters requried by aspera client. the 'key', the 'host',
+and raw data path depostied in NCBI aspera server.
+"
 aspc.exe       <- '/bioware/bin/.aspera/connect/bin/ascp'
 key            <- '/bioware/bin/.aspera/connect/etc/asperaweb_id_dsa.openssh'
 host           <- 'ftp-private.ncbi.nlm.nih.gov'
@@ -81,21 +111,26 @@ align( index          = base.string,
        unique         = T )
 
 
-GSE85728.rsubread.gencode <- featureCounts( GSE85728.output.filenames, useMetaFeatures = TRUE,
-                                          countMultiMappingReads = FALSE,
-                                          strandSpecific         = 2, 
-                                          isPairedEnd            = TRUE,
-                                          requireBothEndsMapped  = TRUE,
-                                          autosort               = TRUE,
-                                          nthreads               = 17,
-                                          annot.ext              = lncRmRNA.GRCm38.GTF.file , 
-                                          isGTFAnnotationFile    = TRUE,
-                                          GTF.featureType        = 'exon',
-                                          GTF.attrType           = 'gene_id',
-                                          allowMultiOverlap      = TRUE)
+GSE85728.rsubread.gencode <- featureCounts( GSE85728.output.filenames, 
+                                            useMetaFeatures        = TRUE,
+                                            countMultiMappingReads = FALSE,
+                                            strandSpecific         = 2, 
+                                            isPairedEnd            = TRUE,
+                                            requireBothEndsMapped  = TRUE,
+                                            autosort               = TRUE,
+                                            nthreads               = 17,
+                                            annot.ext              = lncRmRNA.GRCm38.GTF.file , 
+                                            isGTFAnnotationFile    = TRUE,
+                                            GTF.featureType        = 'exon',
+                                            GTF.attrType           = 'gene_id',
+                                            allowMultiOverlap      = TRUE)
 
 gencode.GRCh38.mouse   <- import(lncRmRNA.GRCm38.GTF.file)
 ```
+
+In this tutorial, I use the preprocessed data (Rdata, saved objects, 
+GSE85728.rsubread.gencode & gencode.GRCh38.mouse) generated from the above steps
+to show the inference procedure below.
 
 ```{r load demo data, include = TRUE}
 
@@ -105,20 +140,38 @@ ls()
 
 ```
 
-```{r figure reports, include = TRUE}
+Raw data already processed and we get the mapping count data
+and annotation files.
 
+```{r figure reports, message = FALSE}
 
+"
+this will extract all gene ensembl id from rsubread feathrecount object
+"
 GRCm38.genenames <- GSE85728.rsubread.gencode %$% annotation %$% 
                     GeneID %>% sub('.\\d+$','',., perl = F) %>%
                     mapIds( org.Mm.eg.db, keys = ., column = 'SYMBOL', 
                             keytype = 'ENSEMBL', multiVals = 'first') %>%
                     make.names( unique = TRUE)
 
+"
+I extract the gene alone from then annotation file.
+Gencode is a public project to annotate all genes in
+human and mouse
+"
 GRCm38.extra.annot      <- gencode.GRCm38.mouse %$% 
                            {data.frame( ensembl.id = gene_id, 
                                           gene       = type, 
                                           gene_type  = gene_type)}%>%
                            filter(gene == 'gene') %>% unique()
+
+"
+this function aims to get normrlized and log transformed gene 
+expression value from rsubread mapping count result
+@param genes: rsubread feathureCount object
+@param annot: annotation list to caculate the RPKM, this param
+              forward the gene length
+"
 
 rnaseq.rlog.func   <- function(genes,annot) {
                           genes %$% counts %>% 
@@ -126,14 +179,19 @@ rnaseq.rlog.func   <- function(genes,annot) {
                           calcNormFactors() %>% rpkm(log = T)
                       }
 GSE85728.rpkm <- rnaseq.rlog.func( GSE85728.rsubread.gencode, 
-                                           GSE85728.rsubread.gencode$annotation)
+                                   GSE85728.rsubread.gencode$annotation)
 
+"
+I change the original column names to the new names having clear
+biological meaning.
+"
 
-colnames(GSE85728.rpkm) <- c( 'LVP0_rep1','LVP0_rep2','LVP0_rep3','LVP3_rep1',
-                              'LVP3_rep2','LVP3_rep3','LVP7_rep1','LVP7_rep2',
-                              'LVP7_rep3','RVP0_rep1','RVP0_rep2','RVP0_rep3',
-                              'RVP3_rep1','RVP3_rep2','RVP3_rep3','RVP7_rep1',
-                              'RVP7_rep2')
+sample.names             <- c( 'LVP0_rep1','LVP0_rep2','LVP0_rep3','LVP3_rep1',
+                               'LVP3_rep2','LVP3_rep3','LVP7_rep1','LVP7_rep2',
+                               'LVP7_rep3','RVP0_rep1','RVP0_rep2','RVP0_rep3',
+                               'RVP3_rep1','RVP3_rep2','RVP3_rep3','RVP7_rep1',
+                               'RVP7_rep2')
+colnames(GSE85728.rpkm)  <- sample.names
 
 GSE85728.extra.annot     <- GSE85728.rsubread.gencode %$% 
                             annotation %$% 
@@ -157,6 +215,12 @@ time.point.rpkm  <- map(comparision.list, apply.mean.func, df.matrix = GSE85728.
 
 left.right.markers <- list()
 QC.genename     <- 'Myl2'
+#---
+# I always, like in biological experiments, use the postive 
+# control to validate my results. In the public data, I prefer
+# to choose the known pathway markers to confirm that the data
+# is solid compared with the established observations
+#---
 data.QC.checker <- time.point.rpkm %>% 
                    filter(GeneName == QC.genename) %>%
                    melt(.) %>%
@@ -176,4 +240,98 @@ data.QC.checker <- time.point.rpkm %>%
                    theme(plot.title = element_text(hjust = 0.5))
 (data.QC.checker)
 
+
+
+# PCA analysis for GSE85728 (RNA-seq), data validation check
+#---
+
+tissue.groups <- sample.names %>%
+                 sub('_.*$', '', perl = F, .) %>% as.factor() %>%
+                 data.frame(tissueGroups = .)
+GSE85728.vsd.data <- GSE85728.rsubread.gencode %$% counts %>% 
+                     DESeqDataSetFromMatrix( countData = ., 
+                                             colData = tissue.groups, 
+                                             design = ~ tissueGroups) %>%
+                     DESeq() %>% getVarianceStabilizedData()
+colnames(GSE85728.vsd.data) <- sample.names
+
+#---
+# generate the PCA result by calling the function prcomp
+# data needs to be transposed if rows are genes and column
+# are samples.
+#---
+
+GSE85728.vsd.PCA <- GSE85728.vsd.data %>% t() %>% prcomp()
+
+#---
+# quick and dirty map
+# I am used to use the base graphics fucntion to
+# fast view the result and then use the ggplot 
+# to make a scientific report for journla publicaiton
+#
+# deprecated
+#---
+"
+plot(GSE85728.vsd.PCA$x, col = 'white', main = 'GSE85728 LncRNA project')
+text( GSE85728.vsd.PCA$x[,1], GSE85728.vsd.PCA$x[,2], 
+      labels = colnames(GSE85728.vsd.data), cex = 0.7)
+"
+
+#
+# using the pipeline function in tidyverse
+# this make life easier and simple.
+#---
+
+pca.no         <- dim(GSE85728.vsd.PCA$x)[2]
+
+scree.plot.ggplot <- {GSE85728.vsd.PCA$sdev^2} %>%
+                     {./sum(.)} %>% 
+                     {data.frame(variance = ., pca = c(1:pca.no)) } %>%
+                     ggplot(data = .) +
+                     xlab('GSE85728 lincRNA Principle Components') +
+                     ylab('Proportion of Variance Explained') +
+                     scale_x_continuous( breaks = c(1:pca.no), 
+                                         labels = as.character(c(1:pca.no), 
+                                         limits = as.character(c(1:pca.no)))) +
+                     geom_point(aes(x = pca, y = variance), size = 3) +
+                     geom_line(aes(x = pca, y = variance), size = 0.8) +
+                     scale_linetype_discrete() +
+                     theme(legend.position = 'none') +
+                     theme_classic()
+(scree.plot.ggplot)
+
+cumsum.plot.ggplot <- {GSE85728.vsd.PCA$sdev^2} %>%
+                      {./sum(.)} %>% 
+                      {data.frame(variance = cumsum(.), pca = c(1:pca.no))}%>%
+                      ggplot(data = .) +
+                      xlab('GSE85728 lncR Principle Components') +
+                      ylab('Culmulative Proportion of Variance Explained') +
+                      scale_x_continuous( breaks = c(1:pca.no), labels = as.character(c(1:pca.no), 
+                                          limits = as.character(c(1:pca.no)))) +
+                      geom_point(aes(x = pca, y = variance), size = 3) +
+                      geom_line(aes(x = pca, y = variance),size = 0.8) +
+                      scale_linetype_discrete() +
+                      theme(legend.position = 'none') +
+                      theme_classic()
+(cumsum.plot.ggplot)
+
+GSE85728.PCA.ggplot <- as.data.frame(GSE85728.vsd.PCA$x) %>% 
+                        mutate(color.choice = { rownames(.) %>% 
+                                                str_replace_all('_.*$', '') %>%
+                                                as.factor}) %>%
+                        ggplot(data = . ) + 
+                        geom_point( aes(x = PC1, y = PC2, color = color.choice), 
+                                    size = 3, show.legend = TRUE) + 
+                        scale_colour_manual( name   = 'GSE85728 lncRNA sample stages',
+                                             values = c( 'magenta','orangered', 'violetred',
+                                                         'steelblue','royalblue','navyblue'),
+                                             labels = sample.names) +
+                        geom_text_repel( aes(x = PC1, y = PC2), 
+                                         label = sample.names, 
+                                         color = 'grey80', size = 2.5, fontface = 'bold') +
+                        theme_classic()
+(GSE85728.PCA.ggplot)
+
 ```
+## Discussion
+## References
