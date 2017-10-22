@@ -1,5 +1,7 @@
 ---
 title: "Hackseq2017_Proj5"
+author: Peter Zhang 
+date: Cot 22, 2017
 output: html_document
 ---
 
@@ -10,26 +12,27 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Load required R packages
 
-```
+```{R}
 library(xlsx)
 library(animation)
 library(readr)
 library(biomaRt)
 library(dplyr)
 library(ggplot2)
+library(pubmed.mineR)
 
 ```
 
 Load the gene of interest
 
-```
+```{R}
 gene<-"BRCA1"
 ```
 
 
 Create a excel workbook project with xlsx package
 
-```
+```{R}
   wb<-createWorkbook()
   ## create a bold font for column names of data tables
   cs<-CellStyle(wb) + Font(wb, isBold = TRUE) + Border() + Alignment(h="ALIGN_CENTER")
@@ -38,13 +41,13 @@ Create a excel workbook project with xlsx package
 
 Create a excel sheet within the workbook, we will name this sheet "Gene Info", because we will put general gene info in this first "cover sheet"
 
-```
+```{R}
   sheet0<-createSheet(wb, sheetName = "Gene Info")
 ```
 
 Now, we will use the biomaRt package to retrive basic gene info, such as genome coordinates
 
-```
+```{R}
   mart<-useMart("ensembl", dataset="hsapiens_gene_ensembl")
   a<-mart@attributes$name
   ##the info we retrieve with biomaRt is fully customization, see biomaRt package manual for a full list of more than 800 gene features available
@@ -54,13 +57,13 @@ Now, we will use the biomaRt package to retrive basic gene info, such as genome 
 
 Now we load our gene info onto the excel sheet we created
 
-```
+```{R}
   addDataFrame(gene.info, sheet0, colnamesStyle = cs)
 ```
 
 On the same work sheet, we can add additional info, such as phenotype info
 
-```
+```{R}
   gene.phenotype<-getBM("phenotype_description", a[60], gene, mart)
   addDataFrame(gene.phenotype, sheet0, startRow = 6, colnamesStyle = cs)
 ```
@@ -68,30 +71,23 @@ On the same work sheet, we can add additional info, such as phenotype info
 Let say this is all we are going to put on our first sheet.
 We are going to create a new work sheet for a new analysis, within the same workbook
 
-```
+```{R}
   sheet1<-createSheet(wb, sheetName = "Expression")
   
   ##Generate an expression figure according to stage
-  expr.gene<-as.data.frame(dataFiltCRC[gene,])
-  expr.gene<-mutate(expr.gene, sampleID=rownames(expr.gene))
-  expr.gene<-mutate(expr.gene, brc_patient_barcode=substr(expr.gene$sampleID, 1, 12))
-  gene.dup<-unique(expr.gene$brc_patient_barcode[duplicated(expr.gene$brc_patient_barcode)])
-  expr.gene.single<-subset(expr.gene, !(expr.gene$brc_patient_barcode%in%gene.dup))
-  dataClin.gene<-subset(dataClinSTAGE, dataClin$bcr_patient_barcode%in%expr.gene.single$brc_patient_barcode)
-  dataClin.gene<-merge.data.frame(expr.gene.single, dataClin.gene, by.x ="brc_patient_barcode", by.y = "bcr_patient_barcode" )
-  colnames(dataClin.gene)[2]<-"Expression"
-  my_comparisons <- list(c("I", "II"), c("II", "III"), c("III", "IV"), c("I", "III"), c("I", "IV"), c("II", "IV"))
+  expr.data<-read.csv("exprData.csv.gz")
+  expr.gene<-as.data.frame(expr.data[gene,])
 ```
 
 Here our expression analysis can be virsualized with a figure
 
-```
-  ##Make a staged figure for all CRC
-  gene.boxplot<-ggplot(dataClin.gene, aes(x = STAGE, y = log2(Expression), fill=STAGE)) +
+```{R}
+  ##Make an expression figure
+  gene.boxplot<-ggplot(expr.gene, aes(x = STAGE, y = log2(Expression), fill=STAGE)) +
     geom_boxplot() +
     labs(x = "Tumor Stage",
          y = "Expression (Log2 transformed)",
-         title = paste0(("Expression of "),gene,(" in all CRC (N=392) by Tumor Stage")))+
+         title = paste0(("Expression of "),gene))+
     theme(plot.title = element_text(hjust = 0.5),
           axis.text.x = element_text(size=6))+
     stat_compare_means(comparisons = my_comparisons, label = "p.signif")+
@@ -101,16 +97,17 @@ Here our expression analysis can be virsualized with a figure
 
 One way of storing the figure in our work sheet is to save it to an external file first, then import the figure to our data
 
-```
-  ggsave(gene.boxplot, filename="TCGA.all.expression.by.stage.png")
-  addPicture("TCGA.all.expression.by.stage.png", sheet1, scale=1, startRow=31, startColumn=12)
+```{R}
+  ggsave(gene.boxplot, filename="Expression.figure.png")
+  addPicture("Expression.figure.png", sheet1, scale=1, startRow=31, startColumn=12)
 ```  
 
 We can store unlimited number of data sheets or figure in a single workbook, on multiple worksheets. Create as many new sheets as needed and load the results data table or figure onto them.
 
-```
+```{R}
   sheet2<-createSheet(wb, sheetName = "CNV")
-  CNV.info2<-subset(Young_NOCNV_genes, Young_NOCNV_genes$GeneSymbol %in% gene)
+  ##import your CNV data results as table
+  CNV.info2<-"CNV.data"
   addDataFrame(CNV.info2, sheet2, colnamesStyle = cs)
 ```
 
@@ -126,7 +123,7 @@ Some functions do not have a built-in file output.  We can use R default device 
 
 ```
 dev.off()
-**some script making a figure to R imaging device
+##some script making a figure to R imaging device
 dev.copy2pdf()
 file.rename("Rplot.pdf")
  im.convert("Rplot.pdf", output = "Rplot.png",extra.opts="-density 150")
@@ -136,10 +133,12 @@ file.rename("Rplot.pdf")
 We can also store text results, such as text-mining results to our workbook
 Example of storing results of PubMed text-mining results on a worksheet
 
-```
-  sheet6<-createSheet(wb, sheetName = "PubMed")
+```{R}
+  sheet3<-createSheet(wb, sheetName = "PubMed")
   ##grab abstracts for gene
-  gene.abs<-getabs(CRCabs, gene, FALSE)
+  ##compile a abs database regarding "1000 genome breast cancer" search in pub-med
+  ABSdata<-readabs("pubmed_result_1000genomescancerbreast.txt")
+  gene.abs<-getabs(ABSdata, gene, FALSE)
   gene.PMID<-get_PMCIDS(gene.abs)
   ##extract sentence from abs for gene
   gene.sentences<-Give_Sentences(gene, gene.abs)
@@ -149,6 +148,6 @@ Example of storing results of PubMed text-mining results on a worksheet
 
 After all results are loaded onto our multi-sheet workbook, we can save our workbook as an excel sheet
 
-``` 
+``` {R}
   saveWorkbook(wb, file = paste0("ALL_RESULTS.xlsx"))
 ```
