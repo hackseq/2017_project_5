@@ -1,0 +1,41 @@
+---
+title: "Hackathon-Driven Tutorial Development"
+subtitle: "Lessons from Hackseq 2017"
+author: "Bruno, Annie, Arjun, Florian, Peter and Yisong"
+date: "October 22nd, 2017"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+```
+
+# How documented are your tools?
+
+Different levels of documentation
+    
+    1. No documentation at all
+        * Lame...
+    2. Function documentation (inputs and outputs)
+        * The bare minimum
+    3. Vignettes (example use cases)
+        * The most useful! 
+
+---
+class: center, middle
+
+# xaringan
+
+### /ʃæ.'riŋ.ɡæn/
+
+---
+class: inverse, center, middle
+
+# Get Started
+

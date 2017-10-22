@@ -7,5 +7,4 @@ output:
 
 We teamed up at hackseq 2017 behind our team leader, [Bruno Grande](https://twitter.com/grandebruno), in order to develop advanced R tutorials for genomic data analysis.
 
-You can find our presentation [there](presentation/hackseq.html
-).
+You can find our presentation [there](presentation/hackseq.html).
