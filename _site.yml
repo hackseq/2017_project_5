@@ -17,7 +17,7 @@ navbar:
         - text: "Data Wrangling and Analysis"
         - text: "Simplified eQTL analysis in R"
           href:
-        - text: "Analysis of results in a consistent data structure"
+        - text: "Analysis results in a consistent data structure"
           href: tidyverse-list-columns.html
         - text: "Genomic data analysis with large matrices in R"
           href: memory-mapping.html

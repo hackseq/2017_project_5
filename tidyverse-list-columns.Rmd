@@ -1,5 +1,5 @@
 ---
-title: "Analysis of results in a consistent data structure"
+title: "Analysis results in a consistent data structure"
 author: "Florian Privé"
 date: "October 21, 2017"
 output: html_document
