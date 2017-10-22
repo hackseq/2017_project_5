@@ -3,7 +3,9 @@ files <- c(
   "privefl/tidyverse-list-columns.Rmd",
   "privefl/all-in-R.Rmd",
   "privefl/refs.bib",
-  "abaghela/eQTLanalysis.Rmd"
+  "abaghela/eQTLanalysis.Rmd",
+  "pzhang/xlsx_tutorial.Rmd",
+  "pzhang/pubmed_result_1000genomescancerbreast.txt"
 )
 file.copy(files, basename(files), overwrite = TRUE)
 

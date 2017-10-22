@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Peter Zhang" />
+
+
+<title>Hackseq2017_Proj5</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Genomic Data Analysis in R</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="about.html">
+    <span class="fa fa-user"></span>
+     
+    About
+  </a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-file"></span>
+     
+    Tutorials
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li class="dropdown-header">Pipelines</li>
+    <li>
+      <a href="all-in-R.html">Doing all your analysis in R</a>
+    </li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Data Wrangling and Analysis</li>
+    <li>
+      <a href="eQTLanalysis.html">(Not finished) Simplified eQTL analysis in R</a>
+    </li>
+    <li>
+      <a href="tidyverse-list-columns.html">Analysis results in a consistent data structure</a>
+    </li>
+    <li>
+      <a href="memory-mapping.html">Genomic data analysis with large matrices in R</a>
+    </li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Data Vizualization</li>
+    <li class="dropdown-header">Unsupervised clustering</li>
+    <li class="divider"></li>
+    <li class="dropdown-header">Reporting</li>
+    <li class="dropdown-header">(Coming soon) Yisong's tutorial (rmarkdown)</li>
+    <li>
+      <a href="xlsx_tutorial.html">Integration of Genomic Analytic Results as a Multi-tab Excel Sheet with Package 'xlsx'</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="http://www.hackseq.com/">hackseq</a>
+</li>
+<li>
+  <a href="presentation/hackseq.html">Presentation</a>
+</li>
+<li>
+  <a href="paper.html">Paper</a>
+</li>
+<li>
+  <a href="https://github.com/hackseq/2017_project_5">
+    <span class="fa fa-github"></span>
+     
+    GitHub
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Hackseq2017_Proj5</h1>
+<h4 class="author"><em>Peter Zhang</em></h4>
+<h4 class="date"><em>Cot 22, 2017</em></h4>
+
+</div>
+
+
+<p>Load required R packages</p>
+<pre class="r"><code>Sys.setenv(JAVA_HOME=&#39;C:/Program Files/Java/jdk-9.0.1&#39;) # for 64-bit version
+library(xlsx)</code></pre>
+<pre><code>## Loading required package: rJava</code></pre>
+<pre><code>## Loading required package: xlsxjars</code></pre>
+<pre class="r"><code>library(animation)
+library(readr)
+library(biomaRt)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:data.table&#39;:
+## 
+##     between, first, last</code></pre>
+<pre><code>## The following object is masked from &#39;package:biomaRt&#39;:
+## 
+##     select</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(ggplot2)
+library(pubmed.mineR)</code></pre>
+<p>Load the gene of interest</p>
+<pre class="r"><code>gene&lt;-&quot;BRCA1&quot;</code></pre>
+<p>Create a excel workbook project with xlsx package</p>
+<pre class="r"><code>  wb&lt;-createWorkbook()
+  ## create a bold font for column names of data tables
+  cs&lt;-CellStyle(wb) + Font(wb, isBold = TRUE) + Border() + Alignment(h=&quot;ALIGN_CENTER&quot;)</code></pre>
+<p>Create a excel sheet within the workbook, we will name this sheet “Gene Info”, because we will put general gene info in this first “cover sheet”</p>
+<pre class="r"><code>  sheet0&lt;-createSheet(wb, sheetName = &quot;Gene Info&quot;)</code></pre>
+<p>Now, we will use the biomaRt package to retrive basic gene info, such as genome coordinates</p>
+<pre class="r"><code>  mart&lt;-useMart(&quot;ensembl&quot;, dataset=&quot;hsapiens_gene_ensembl&quot;)
+  a&lt;-mart@attributes$name
+  ##the info we retrieve with biomaRt is fully customization, see biomaRt package manual for a full list of more than 800 gene features available
+  a.useful&lt;-c(a[1], a[9:12], a[61], a[97])
+  gene.info&lt;-getBM(a.useful, a[60], gene, mart)</code></pre>
+<p>Now we load our gene info onto the excel sheet we created</p>
+<pre class="r"><code>  addDataFrame(gene.info, sheet0, colnamesStyle = cs)</code></pre>
+<p>On the same work sheet, we can add additional info, such as phenotype info</p>
+<pre class="r"><code>  gene.phenotype&lt;-getBM(&quot;phenotype_description&quot;, a[60], gene, mart)
+  addDataFrame(gene.phenotype, sheet0, startRow = 6, colnamesStyle = cs)</code></pre>
+<p>Let say this is all we are going to put on our first sheet. We are going to create a new work sheet for a new analysis, within the same workbook</p>
+<pre class="r"><code>  sheet1&lt;-createSheet(wb, sheetName = &quot;Expression&quot;)
+  
+  ##Generate an expression figure according to stage
+  download.file(&quot;https://github.com/hackseq/2017_project_5/raw/master/data/exprData.csv.gz&quot;, &quot;exprData.csv.gz&quot;)
+  exprData&lt;-read.csv(&quot;exprData.csv.gz&quot;)
+  expr.gene&lt;-subset(exprData, exprData$GeneId==gene)
+  expr.gene.graph&lt;-as.data.frame(t(expr.gene))
+  expr.gene.graph&lt;-mutate(expr.gene.graph, GENE=as.character(expr.gene.graph[1,1]))
+  expr.gene.graph&lt;-expr.gene.graph[2:nrow(expr.gene.graph),]</code></pre>
+<p>We can save the expression table in worksheet1</p>
+<pre class="r"><code>  addDataFrame(expr.gene.graph, sheet1, startRow = 1, colnamesStyle = cs)</code></pre>
+<p>Here our expression analysis can be virsualized with a figure</p>
+<pre class="r"><code>  ##Make an expression figure
+  gene.boxplot&lt;-ggplot(expr.gene.graph, aes(x=GENE, y=as.numeric(as.character(expr.gene.graph$GENE)))) +
+    geom_boxplot() +
+    labs(x = &quot;Gene&quot;,
+         y = &quot;Expression (Log2 transformed)&quot;,
+         title = paste0((&quot;Expression of &quot;),gene))+
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(size=6))</code></pre>
+<p>One way of storing the figure in our work sheet is to save it to an external file first, then import the figure to our data Here, we are saving our expression figure on worksheet1, to avoid overlapping with our data table we load on this sheet earlier, we will load it onto column 6</p>
+<pre class="r"><code>  ggsave(gene.boxplot, filename=&quot;Expression.figure.png&quot;)</code></pre>
+<pre><code>## Saving 7 x 5 in image</code></pre>
+<pre><code>## Warning in fun(x, ...): NAs introduits lors de la conversion automatique</code></pre>
+<pre><code>## Warning in FUN(X[[i]], ...): NAs introduits lors de la conversion
+## automatique</code></pre>
+<pre><code>## Warning: Removed 350 rows containing non-finite values (stat_boxplot).</code></pre>
+<pre class="r"><code>  addPicture(&quot;Expression.figure.png&quot;, sheet1, scale=1, startRow=1, startColumn=6)</code></pre>
+<p>We can store unlimited number of data sheets or figure in a single workbook, on multiple worksheets. Create as many new sheets as needed and load the results data table or figure onto them.</p>
+<pre class="r"><code>  sheet2&lt;-createSheet(wb, sheetName = &quot;CNV&quot;)
+  ##import your CNV data results as table
+  CNV.info2&lt;-&quot;CNV.data&quot;
+  addDataFrame(CNV.info2, sheet2, colnamesStyle = cs)</code></pre>
+<p>Sometimes, functions from packages will save images as .pdf as default format and .pdf can not be directly imported onto our work sheet. In such case, we can use the function from ‘animation’ package to convert pdf into .png file</p>
+<pre><code>  im.convert(&quot;survival.pdf&quot;, output = &quot;survival.png&quot;,extra.opts=&quot;-density 150&quot;)
+  addPicture(&quot;survival.png&quot;, sheet2, scale=0.5, startRow=12, startColumn=6)</code></pre>
+<p>Some functions do not have a built-in file output. We can use R default device image capture to store images</p>
+<pre><code>dev.off()
+##some script making a figure to R imaging device
+dev.copy2pdf()
+file.rename(&quot;Rplot.pdf&quot;)
+ im.convert(&quot;Rplot.pdf&quot;, output = &quot;Rplot.png&quot;,extra.opts=&quot;-density 150&quot;)
+  addPicture(&quot;Rplot.png&quot;, sheet2, scale=0.5, startRow=12, startColumn=6)</code></pre>
+<p>We can also store text results, such as text-mining results to our workbook Example of storing results of PubMed text-mining results on a worksheet</p>
+<pre class="r"><code>  sheet3&lt;-createSheet(wb, sheetName = &quot;PubMed&quot;)
+  ##grab abstracts for gene
+  ##compile a abs database regarding &quot;1000 genome breast cancer&quot; search in pub-med
+  ABSdata&lt;-readabs(&quot;pubmed_result_1000genomescancerbreast.txt&quot;)</code></pre>
+<pre><code>## Warning in initialize(value, ...): NAs introduits lors de la conversion
+## automatique</code></pre>
+<pre class="r"><code>  gene.abs&lt;-getabs(ABSdata, gene, FALSE)</code></pre>
+<pre><code>## [1] &quot;14 abstracts BRCA1&quot;</code></pre>
+<pre class="r"><code>  gene.PMID&lt;-get_PMCIDS(gene.abs)
+  ##extract sentence from abs for gene
+  gene.sentences&lt;-Give_Sentences(gene, gene.abs)
+  addDataFrame(gene.PMID, sheet3, colnamesStyle = cs)
+  addDataFrame(unlist(gene.sentences), sheet3, startRow = 6, colnamesStyle = cs)</code></pre>
+<p>After all results are loaded onto our multi-sheet workbook, we can save our workbook as an excel sheet</p>
+<pre class="r"><code>  saveWorkbook(wb, file = paste0(&quot;ALL_RESULTS.xlsx&quot;))</code></pre>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

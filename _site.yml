@@ -30,7 +30,7 @@ navbar:
         - text: "(Coming soon) Yisong's tutorial (rmarkdown)"
           href:
         - text: "Integration of Genomic Analytic Results as a Multi-tab Excel Sheet with Package 'xlsx'"
-          href:
+          href: xlsx_tutorial.html
   right:
     - text: "hackseq"
       href: http://www.hackseq.com/
