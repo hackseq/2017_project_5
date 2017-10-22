@@ -2,8 +2,7 @@ name: "Hackseq 2017 - Tutorials"                                  # CHANGE HERE
 output_dir: "docs"
 exclude: ["privefl", "abaghela", "data", "pzhang", "zhenys", "Unsupervised_clustering_AC"]
 navbar:
-  title: "Genomic Data Analysis in R"                               # CHANGE HERE 
-  type: inverse
+  title: "Genomic Data Analysis in R"
   left:
     - text: "Home"
       icon: fa-home
@@ -14,25 +13,25 @@ navbar:
     - text: "Tutorials"
       menu:
         - text: "Pipelines"
-        - text: "Florian's 2nd tutorial (pipelines in R)"
+        - text: "Doing all your analysis in R"
           href: all-in-R.html
         - text: "---------"
         - text: "Data Wrangling and Analysis"
-        - text: "Arjun's tutorial (data.table + biomaRt)"
+        - text: "Simplified eQTL analysis in R"
           href:
-        - text: "Florian's 3rd tutorial (purrr)"
+        - text: "Analysis of results in a consistent data structure"
           href: tidyverse-list-columns.html
-        - text: "Florian's 1st tutorial (bigsnpr)"
+        - text: "Genomic data analysis with large matrices in R"
           href: memory-mapping.html
         - text: "---------"
         - text: "Data Vizualization"
-        - text: "Annie's tutorial (unsupervised clustering)"
+        - text: "Unsupervised clustering"
           href:
         - text: "---------"
         - text: "Reporting"
         - text: "Yisong's tutorial (rmarkdown)"
           href:
-        - text: "Peter's tutorial (xlsx)"
+        - text: "Integration of Genomic Analytic Results as a Multi-tab Excel Sheet with Package 'xlsx'"
           href:
   right:
     - text: "hackseq"
@@ -43,4 +42,4 @@ navbar:
 output:
   html_document:
     theme: cosmo
-highlight: textmate
+    highlight: textmate
