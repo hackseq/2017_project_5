@@ -5,7 +5,8 @@ files <- c(
   "privefl/refs.bib",
   "abaghela/eQTLanalysis.Rmd",
   "pzhang/xlsx_tutorial.Rmd",
-  "pzhang/pubmed_result_1000genomescancerbreast.txt"
+  "pzhang/pubmed_result_1000genomescancerbreast.txt",
+  "Unsupervised_clustering_AC/PCA.html"
 )
 file.copy(files, basename(files), overwrite = TRUE)
 
