@@ -15,8 +15,8 @@ navbar:
           href: all-in-R.html
         - text: "---------"
         - text: "Data Wrangling and Analysis"
-        - text: "Simplified eQTL analysis in R"
-          href:
+        - text: "(Not finished) Simplified eQTL analysis in R"
+          href: eQTLanalysis.html
         - text: "Analysis results in a consistent data structure"
           href: tidyverse-list-columns.html
         - text: "Genomic data analysis with large matrices in R"
@@ -27,13 +27,17 @@ navbar:
           href:
         - text: "---------"
         - text: "Reporting"
-        - text: "Yisong's tutorial (rmarkdown) -- Coming soon"
+        - text: "(Coming soon) Yisong's tutorial (rmarkdown)"
           href:
         - text: "Integration of Genomic Analytic Results as a Multi-tab Excel Sheet with Package 'xlsx'"
           href:
   right:
     - text: "hackseq"
       href: http://www.hackseq.com/
+    - text: "Presentation"
+      href: presentation/hackseq.html
+    - text: "Paper"
+      href: paper.html
     - text: "GitHub"
       icon: fa-github
       href: https://github.com/hackseq/2017_project_5

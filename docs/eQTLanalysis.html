@@ -9,9 +9,11 @@
 <meta name="generator" content="pandoc" />
 
 
+<meta name="author" content="Arjun Baghela" />
 
+<meta name="date" content="2017-10-20" />
 
-<title></title>
+<title>eQTL analysis</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,6 +24,7 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -242,29 +245,28 @@ $(document).ready(function () {
 
 
 
+<h1 class="title toc-ignore">eQTL analysis</h1>
+<h4 class="author"><em>Arjun Baghela</em></h4>
+<h4 class="date"><em>2017-10-20</em></h4>
 
 </div>
 
 
-<div id="advanced-r-tutorials-for-genomic-data-analysis" class="section level1">
-<h1>Advanced R Tutorials for Genomic Data Analysis</h1>
-<p><img src="https://img.shields.io/badge/Hackseq-2017-cccccc.svg" alt="Hackseq 2017" /> <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" /></p>
-<p>This repository features a collection of advanced R tutorials for genomic data analysis. Check them out here:</p>
-<p><strong>R Tutorials:</strong> <a href="https://hackseq.github.io/2017_project_5/" class="uri">https://hackseq.github.io/2017_project_5/</a></p>
-<p>This idea is born out of the realization that much of the more advanced domain-specific knowledge needed for genomic data analysis is acquired through serendipitous discovery and extensive experience. The aim of this project is to pool this hard-fought collective knowledge and organize it into consistent modular tutorials.</p>
-<div id="contributions" class="section level2">
-<h2>Contributions</h2>
-<p>This is a collaborative project, so all contributions are welcome! Please review the <a href="CONTRIBUTING.md">contribution guidelines</a> and propose a tutorial idea by <a href="https://github.com/hackseq/2017_project_5/issues/new">opening an issue</a>. This will give the opportunity to the community to provide valuable feedback before you create your tutorial.</p>
-</div>
-<div id="issues" class="section level2">
-<h2>Issues</h2>
-<p>If you encounter any problems, please <a href="https://github.com/hackseq/2017_project_5/issues/new">file an issue</a> along with a detailed description.</p>
-</div>
-<div id="license" class="section level2">
-<h2>License</h2>
-<p>These tutorials are covered under the terms of the <a href="LICENSE">MIT license</a>.</p>
-</div>
-</div>
+<p>This is the start of a simplified eQTL analysis. The goal is to highlight different packages which can make this easier and a general overview of what it is.</p>
+<p>First things first, lets load the packages we will primarily use.</p>
+<pre class="r"><code>library(biomaRt)
+mart &lt;- useDataset(&quot;hsapiens_gene_ensembl&quot;, useMart(&quot;ensembl&quot;))
+
+library(data.table)
+library(magrittr) # This is to be able to use the pipe. </code></pre>
+<p>Now lets read in all the data we need, specifically the snp data and expression data.</p>
+<p>So, what are eQTLs? Expression quantitative trait loci (eQTLs) are genomic loci that contribute to variation in expression levels of mRNAs. So for each gene, the expression level and mutations are checked to see if there is an association. This indicates whether certain mutation(s) contribute to changes in expression. (plagarized from wiki :D)</p>
+<pre class="r"><code>#mapStuff &lt;- function(genes) {
+#  geneList &lt;- getBM(filters= &quot;ensembl_gene_id&quot;, attributes= c(&quot;ensembl_gene_id&quot;, &quot;hgnc_symbol&quot;, &quot;description&quot;, &quot;start_position&quot;, &quot;end_position&quot;),values=genes,mart=mart)
+#  geneList &lt;- geneList %&gt;% dplyr::select(-c(ensembl_gene_id))
+#  return(geneList)
+#}
+#rownames(exprData)[1:10] %&gt;% mapStuff()</code></pre>
 
 
 

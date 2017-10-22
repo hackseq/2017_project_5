@@ -2,7 +2,8 @@ files <- c(
   "privefl/memory-mapping.Rmd",
   "privefl/tidyverse-list-columns.Rmd",
   "privefl/all-in-R.Rmd",
-  "privefl/refs.bib"
+  "privefl/refs.bib",
+  "abaghela/eQTLanalysis.Rmd"
 )
 file.copy(files, basename(files), overwrite = TRUE)
 
