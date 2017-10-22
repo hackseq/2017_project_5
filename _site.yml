@@ -4,13 +4,11 @@ exclude: ["privefl", "abaghela", "data", "pzhang", "zhenys", "Unsupervised_clust
 navbar:
   title: "Genomic Data Analysis in R"
   left:
-    - text: "Home"
-      icon: fa-home
-      href: index.html
     - text: "About"
       icon: fa-user 
       href: about.html
     - text: "Tutorials"
+      icon: fa-file 
       menu:
         - text: "Pipelines"
         - text: "Doing all your analysis in R"
