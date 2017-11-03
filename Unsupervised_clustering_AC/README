@@ -1,4 +1,5 @@
-#Unsupervised clustering
+
+##Unsupervised clustering
 This folder contains tutorials for unsupervised clustering methods useful in genomics analysis. 
 Please see the flowchart for general data pipeline visualisation, and follow the links therein to the individual tutorial pages.
 
@@ -8,7 +9,7 @@ Please see the flowchart for general data pipeline visualisation, and follow the
                                │                                      │                             
                                │                                      │                             
                                │                                      │                             
-                               │           #RNA-seq data              │                             
+                               │           ##RNA-seq data              │                             
                                │                                      │                             
                                │                                      │                             
                                │                                      │                             
