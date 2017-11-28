@@ -10,7 +10,7 @@ output:  html_document
 ## Introduction
 The following is the authentic code in my on-going project to find the key 
 players in controlling left-right (L-R) patterning during heart development[@Chen2010-uk].
-Raw data is from wanglab's recent work [@Touma2016-ym].
+Raw data is from wanglab's recent work, including mRNA and lncRNA at different stages [@Touma2016-ym].
 
 We have met problems in biomedicine field. The researcher's work is not fully 
 reproducible[@Prinz2011-nt;@Baker2015-tu]. 
@@ -18,12 +18,14 @@ And data-sharing is also arguable in biomedicine researchers [@International_Con
 And source code is kept confidentially in individual labs.
 
 - Using Github to collaborate with researchers over the world in a big project
-- Writing down Rmarkdown memo to share the knowledge with biologists and perform reproducible research
+- Writing down Rmarkdown memo to share the analysis protocol with biologists and perform reproducible research,
+  which is already achived in other sciences [].
 - Adopting Clean code style to facilitate the code maintenance in the future studies
-- Asking an interesting Question first and then analyze the raw data step by step
+- Asking an interesting Question first and then analyze the raw data step by step, which avoid p-hacking.
 
 
-My biological question is, what are the novel determinants involved in LR patterning?
+My biological question is, what are the novel determinants involved in LR patterning during heart development? To tackle
+this problem using the public data, I will perform post Quality control (post-QC) procedure and then 
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set( 
@@ -395,3 +397,6 @@ session_info()
 ```
 ## Discussion
 ## References
+```{r reference, include = FALSE}
+knitr::write_bib()
+```
