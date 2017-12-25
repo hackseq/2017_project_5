@@ -5,32 +5,158 @@ date: '2017-10-20'
 output: html_document
 ---
 
-This is the start of a simplified eQTL analysis. The goal is to highlight different packages which can make this easier and a general overview of what it is. 
+This is the start of a simplified eQTL analysis. The goal is to highlight different packages which can make this easier and a general overview of what it is. Namely biomaRt and data.table. 
 
+## Load packages
 First things first, lets load the packages we will primarily use. 
 ```{r, }
 library(biomaRt)
 mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
 
 library(data.table)
-library(magrittr) # This is to be able to use the pipe. 
+library(magrittr) # This is to be able to use the pipe (%>%) 
+library(ggplot2)
+```
+
+## Read in data
+
+Now lets read in all the data we need, specifically the snp data, snp metadata, and expression data. We will be using fread from data.table
+```{r}
+download.file("https://github.com/hackseq/2017_project_5/raw/master/data/exprData.csv.gz", "exprData.csv.gz")
+exprData <- fread(input = 'zcat < exprData.csv.gz')
+
+download.file("https://raw.githubusercontent.com/hackseq/2017_project_5/master/data/snpData.csv", "snpData.csv")
+snpData <- fread("snpData.csv")
+
+download.file("https://raw.githubusercontent.com/hackseq/2017_project_5/master/data/snpMetaData.csv", "snpMetaData.csv")
+snpMetaData <- fread("snpMetaData.csv")
+```
+
+## Taking a quick look at the data
+Lets explore the data a bit using str(), which will tell us the dimensions of the dataset and what kind of data each column contains. 
+```{r}
+exprData %>% str() 
+snpData %>% str() # The numbers here indicate the number of copies of the second allele carried by each person. So a zero means 0 second allele (homozygous), a one means 1 second allele (heterozygous), and two means 2 second alleles (homozygous)
+snpMetaData %>% str()
+```
+
+## Filter/edit datasets
+
+Now lets filter our datasets, cause there is information in them we do not really need for our analysis. 
+Specifically, we dont need extra patients which we do not have expression data for. 
+The V1 column of the snpData contains the name for each patient. Of course, we would only like to keep the NA18XXX patients which we have expression data for.
+We will be using the subset base function. 
+```{r}
+# subset.data.table() does not seem to be available in data.frame package right now, despite being in the vignette. Will just use base R subset function
+snpData %<>% subset(V1 %in% colnames(exprData))
+
+# This is minor, but snpMetaData has an useless column V1, which we can remove. 
+snpMetaData %<>% subset(select= -V1)
+
+# We also want to make sure the order of patients in the exprData and snpData files are the same 
+colnames(exprData)[-1] == snpData$V1
+
+# lets change the order of the snpData table
+snpData <- snpData[chmatch((colnames(exprData)[-1]), snpData$V1),]
+colnames(exprData)[-1] == snpData$V1
+
+# Lets change some column names so they make a bit more sense. Chromosome will be changed to chromosome_name because that is what it is called in biomart
+colnames(snpMetaData) <- c("chromosome_name", "snp", "genetic.dist", "start_position", "allele1", "allele2")
+```
+
+## SNP Frequency distribution
+
+```{r}
+snpFreq <- colMeans(snpData[,-1])/2 # This gives us the frequency of the second allele, if one is interested. This would tell one if the second allele is more frequent than the first allele (Wildtype allele)
+
+ggplot() + aes(snpFreq) + geom_histogram(binwidth=.1, colour="black")
+# Looks like most alleles have a second allele frequency of 0.4 to 0.6. 
 
 ```
 
-Now lets read in all the data we need, specifically the snp data and expression data. 
+
+## Identifying gene information with BiomaRt
+
+So, what are eQTLs? Expression quantitative trait loci (eQTLs) are genomic loci that contribute to variation in expression levels of mRNAs. So for each gene, the expression level and mutations are checked to see if there is an association. This indicates whether certain mutation(s) contribute to changes in expression. (plagarized from wiki :D).
+
+Right now, we are only going to care about mutations within genes themeselves. So we definitely need the location of each gene (ie starting and ending nucleotide). We can get this information from biomaRt. biomart is package that can give you plenty of information about genes. Right now, the only "attributes we are interested in is the hgnc symbol, start_position, and end_position". You can find out about other atrributes using biomaRt::listAttributes(mart) function.
 ```{r}
+listAttributes(mart) %>% head()
+listFilters(mart) %>% head()
 
+mapStuff <- function(genes){
+  geneTable <- getBM(filters= "hgnc_symbol", attributes= c("hgnc_symbol", "chromosome_name","start_position", "end_position"), values=genes,mart=mart)
+  return(as.data.table(geneTable))
+}
 
+geneInfo <- exprData$GeneId[3:length(exprData$GeneId)] %>% mapStuff() # The first two genes from expression data prevents getBM() from proceeding, so they are not included. 
+
+geneInfo$hgnc_symbol %>% intersect(exprData$GeneId) %>% length() # Looks like we only have gene location information for 14,452 genes/microarray probes.
+
+#exprDataFilt <- exprData %>% subset(GeneId %in% geneInfo$hgnc_symbol)
 ```
 
+## Finding SNPs within genes
 
-So, what are eQTLs? Expression quantitative trait loci (eQTLs) are genomic loci that contribute to variation in expression levels of mRNAs. So for each gene, the expression level and mutations are checked to see if there is an association. This indicates whether certain mutation(s) contribute to changes in expression. (plagarized from wiki :D)
+We will be using the foverlaps function from data.table. But first we need to prepare the data table so it can be input for foverlaps. 
 ```{r}
-#mapStuff <- function(genes) {
-#  geneList <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id", "hgnc_symbol", "description", "start_position", "end_position"),values=genes,mart=mart)
-#  geneList <- geneList %>% dplyr::select(-c(ensembl_gene_id))
-#  return(geneList)
-#}
-#rownames(exprData)[1:10] %>% mapStuff()
+sapply(geneInfo, class)
+sapply(snpMetaData, class)
+geneInfo$chromosome_name <- as.integer(geneInfo$chromosome_name) # the extra identifier, chromosome_name, needs to be the same class in both data.tables
+snpMetaData$end_position <- snpMetaData$start_position # there needs to be a start and end position for each thing being mapped. So for the snps the end position can be the exact same as the start position
+
+setkey(geneInfo, chromosome_name, start_position, end_position)
+mapped <- foverlaps(snpMetaData[,c(2,1,4,7)] ,geneInfo, type= "any", which= FALSE) %>% na.omit()
+```
+
+## Plotting expression of SNPs within DAB1 gene.
+
+
+```{r}
+mapped$hgnc_symbol %>% table() %>% sort(decreasing=TRUE) %>% head(20)
+
+mappedDAB1 <- mapped %>% subset(hgnc_symbol == "DAB1") 
+snpData %>% subset(V1 %in% mappedDAB1$marker.ID)
+
+snpDataDAB1 <- snpData %>% subset(select= c("V1", mappedDAB1$snp))
+exprDAB1 <- exprData %>% subset(subset = GeneId %in% "DAB1")
+
+snpDataDAB1 %<>% melt.data.table()
+exprDAB1 %<>% melt.data.table()
+
+colnames(snpDataDAB1) <- c("id", "snp", "genotype")
+colnames(exprDAB1) <- c("GeneId", "id", "expr")
+
+mergedDAB1 <- merge(snpDataDAB1, exprDAB1, by= "id")
+
+mergedDAB1 %>% ggplot(aes(x= as.character(genotype), expr)) + geom_boxplot( fill="grey") + geom_jitter(colour="darkgrey", alpha= 0.3) + facet_wrap(~snp)
+```
+
+## Preparing data table for linear modelling
+
+```{r}
+snpDataMelt <- snpData %>% melt.data.table()
+exprDataMelt <- exprData %>% melt.data.table()
+
+colnames(snpDataMelt) <- c("id", "snp", "genotype")
+colnames(exprDataMelt) <- c("GeneId", "id", "expr")
+
+mapped <- mapped[,c(2,5)]
+colnames(mapped) <- c("GeneId", "snp")
+
+mergedDT <- merge(snpDataMelt, mapped, by= "snp") %>% merge(exprDataMelt, by= c("id", "GeneId")) 
+
+lapply(mergedDT, class)
+```
+
+## 
+
+```{r}
+
+#test <- mergedDT[1:1000,]
+#test 
+
+
+#fit <- mapply(function(expr, genotype) lm(expr ~ genotype), mergedDT[-c(3,4)], mergedDT[-c(2,5)], SIMPLIFY=FALSE)
 ```
 
