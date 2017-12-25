@@ -9,64 +9,76 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Clustering & dimension reduction
 ## PCA
 
 Principal component analysis, or PCA, is a method by which high-dimensional data is 'reduced' to a few principle components, which are then plotted against one another in a simple visualisation. In analysis of human gene expression data, there are 20,000 genes, and it would be impossible to plot this in such a way that a human would be able to comprehend and interpret this meaningfully. PCA therefore takes the principal components that add most of the variation to the data, and plots in two or three dimensions according to these variables, causing the data points to cluster within the plotting space, thereby elucidating the distinct populations. This is known as unsupervised, because the user does not input any categories to assign each sample to, nor the number of clusters to obtain.
 
 ```{r}
-expressionData <- read.table("/Users/annie/Desktop/2017_project_5/Unsupervised_clustering_AC/data.txt")
+download.file("https://github.com/hackseq/2017_project_5/raw/master/data/exprData.csv.gz", "exprData.csv.gz")
+expressionData <- read.csv("exprData.csv.gz", header = TRUE, row.names = 1, fill = TRUE)
+```
 
-#The data needs to be transposed, such that variables (genes) are columns and samples are rows
+The data needs to be transposed, such that variables (genes) are columns and samples are rows
+
+```{r}
 data_for_PCA <- t(expressionData)
+```
 
+The cmdscale function calculates a matrix of dissimilarities (mds) from the transposed data and will also provide information about the proportion of explained variance by calculating Eigen values. k represents the maximum dimension of the space which the data are to be represented in
 
-#The cmdscale function calculates a matrix of dissimilarities (mds) from the transposed data and will also provide information about the proportion of explained variance by calculating Eigen values. k represents the maximum dimension of the space which the data are to be represented in
+```{r}
 mds <- cmdscale(dist(data_for_PCA), k=3, eig=TRUE)  
+```
 
-#Plotting this variable as a percentage will help you determine how many components can explain the variability in your dataset and thus how many dimensions to look at
-# k = the maximum dimension of the space which the data are to be represented in
-# eig = indicates whether eigenvalues should be returned
+Plotting this variable as a percentage will help you determine how many components can explain the variability in your dataset and thus how many dimensions to look at
+k = the maximum dimension of the space which the data are to be represented in
+eig = indicates whether eigenvalues should be returned
+
+```{r}
 eig_pc <- mds$eig * 100 / sum(mds$eig)
-b <- barplot(eig_pc,
+eig_pc <- eig_pc[order(-eig_pc)]
+b <- barplot(eig_pc[1:10],
      las=1,
      xlab="Dimensions", 
      ylab="Proportion of explained variance (%)", y.axis=NULL,
      col="darkgrey")
-
-#The first four components explain ~50% of the data, which is good
-mds <- cmdscale(dist(data_for_PCA))
-plot(mds[,1], -mds[,2], type="n", xlab="Dimension 1", ylab="Dimension 2", main="")
-text(mds[,1], -mds[,2], rownames(mds), cex=0.8) 
-
-#It's beneficial to use another method, to validate your results. The main issue here is that PCA works best with more samples than dimensions, so with 21,800 probes it would be best either to have >21800 samples or to only select the top ~100 expressed genes and reduce dimensionality from there.
-prcomp <- prcomp(data_for_PCA, retx = TRUE, center = TRUE, scale. = FALSE,
-                     tol = NULL, rank. = NULL)
-plot(prcomp)
-biplot(prcomp)
 ```
+
+The first four components explain ~50% of the data, which is a good ratio. If all of the data is being explained by ~1 variable, it might indicate a need to normalise the data.
+
+```{r}
+mds <- cmdscale(dist(data_for_PCA))
+plot(mds[,1], -mds[,2], type="p", xlab="Dimension 1", ylab="Dimension 2", main="", cex = 0.8)
+```
+
+
+
 ## NMF
 
 NMF stands for non-negative matrix factorisation and is employed in image and text reduction. Two matrices are calculated that muultiply to approximately the original matrix; one of the main methods used to iteratively calculate the matrices is linear regression.
 
 ```{r}
-
 suppressPackageStartupMessages(library(NMF)) 
 aout <- nmf(expressionData,2)
 aout.3 <- nmf(expressionData,3)
 aout.4 <- nmf(expressionData,4)
+```
 
-#The W and H variables within the 'fit' parameter indicate the matrix breakdown
+The W and H variables within the 'fit' parameter indicate the matrix breakdown
+
+```{r}
 w <- aout@fit@W
 dim(w)
 h <- aout@fit@H
 dim(h)
 
 fit(aout)
-#mtrnew@grey <- approxa
 coefmap(aout)
 coefmap(aout.3)
 coefmap(aout.4)
 ```
+
 
 ## Hierarchical clustering
 
@@ -77,14 +89,54 @@ Hierarchical clustering builds a relationship between samples from the bottom up
 - Find the centroid of each cluster and calculate the distance between centroids of two clusters = centroid linkage clustering
 
 ```{r}
-clusters <- hclust(dist(data_for_PCA[1:100]))
-plot(clusters)
+clusters <- hclust(dist(data_for_PCA))
+plot(clusters, cex = 0.04)
+```
+
+In agreement with PCA, there seem to be two overall clusters, but that they could each be further deconvoluted. The thing to keep in mind for hierarchical clustering is that it's very sensitive to being skewed by noise.
+
+##tSNE
+
+tSNE differs from the other methods introduced so far in that it does not assume that the relationships between features are linear. Instead, it seeks the underlying data structure based on probability distributions with random walk on neighbourhood graphs. While the focus for linear dimensionality reduction is on ensuring dissimilar points are placed far from one another in fewer dimensions; the focus for non-linear is that similar points are placed close together. t-SNE, however, has global strength: it also maps dissimilar points to distant relative locations.
+
+```{r}
+library(Rtsne)
+rtsne1 <- Rtsne(data_for_PCA, dims = 2, max_iter = 500)
+plot(rtsne1$Y, t='p', main="tsne")
+rtsne2 <- Rtsne(data_for_PCA, dims = 2, perplexity=30, max_iter = 500)
+plot(rtsne2$Y, t='p', main="tsne")
+rtsne3 <- Rtsne(data_for_PCA, dims = 2, perplexity=80, max_iter = 500)
+plot(rtsne3$Y, t='p', main="tsne")
+```
 
 
+One of the fun things about tSNE is that if you alter the perplexity, the plot changes. The two groups in the data sets seem best separated at perplexity 80.
+
+```{r}
+tsne <- Rtsne(expressionData, perplexity = 80)
+plot(tsne$Y, t='p', main="tsne", cex = 0.8)
+```
+
+This is what happens when you forget to transpose the dataset. The gene probes have been used as samples. Just a reminder to always check your plots and validate with another test! :)
+
+## K means
+K means clustering is one in which the user defines the number of clusters before running it. However, a nice for loop in the below code chunk can help you work out which is the optimal cluster count. 
+```{r}
+wss <- (nrow(data_for_PCA)-1)*sum(apply(data_for_PCA,2,var))
+for (i in 2:15) wss[i] <- sum(kmeans(data_for_PCA, 
+  	centers=i)$withinss)
+plot(1:15, wss, type="b", xlab="Number of Clusters",
+  ylab="Within groups sum of squares")
 
 ```
 
-The first hundred data points indicate the presence of four distinct clusters.
+Reminiscent of the hierarchical clustering, this plot (similar to a scree plot) indicates that while the population could be broken into 2 groups, there is further deconvolution to be found. 
 
- <http://rmarkdown.rstudio.com>.
+```{r}
+fit <- kmeans(data_for_PCA, 2) 
+plot(data_for_PCA,col=fit$cluster)
+points(fit$center,col=1:2,pch=8,cex=1)
+```
 
+
+For this dataset, the k means clustering is the least effective.

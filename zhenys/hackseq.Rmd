@@ -1,7 +1,7 @@
 ---
-title:   "Authetic code in wet lab, bridging dry and wet parterners"
-author:  "Yisong Zhen"
-date:    "October 21, 2017"
+title:   'Authetic code in wet lab, bridging dry and wet parterners'
+author:  'Yisong Zhen'
+date:    '2017-10-26'
 bibliography: hackseq.bib
 csl: bioinformatics.csl
 output:  html_document
@@ -10,49 +10,75 @@ output:  html_document
 ## Introduction
 The following is the authentic code in my on-going project to find the key 
 players in controlling left-right (L-R) patterning during heart development[@Chen2010-uk].
-Raw data is from wanglab's recent work [@Touma2016-ym].
+Raw data is from wanglab's recent work, including mRNA and lncRNA at different stages [@Touma2016-ym].
 
-We have met problems in biomedicine field. The researching work is not fully 
+We have met problems in biomedicine field. The researcher's work is not fully 
 reproducible[@Prinz2011-nt;@Baker2015-tu]. 
-And data-sharing is also arguable in biomedicine researchers [@International_Consortium_of_Investigators_for_Fairness_in_Trial_Data_Sharing2016-vv.
+And data-sharing is also arguable in biomedicine researchers [@International_Consortium_of_Investigators_for_Fairness_in_Trial_Data_Sharing2016-vv].
 And source code is kept confidentially in individual labs.
 
-- Github to collaborate with researchers over the world in a big project
-- Rmarkdown to share the knowledge with biologists and perform reproducible research
-- Clean code style to facilitate the code maintenance in the future studies
-- Ask an interesting question first and then analyze the raw data
+- Using Github to collaborate with researchers over the world in a big project
+- Writing down Rmarkdown memo to share the analysis protocol with biologists and perform reproducible research,
+  which is already achived in other sciences [].
+- Adopting Clean code style to facilitate the code maintenance in the future studies
+- Asking an interesting Question first and then analyze the raw data step by step, which avoid p-hacking.
 
 
-My biological question is, what are the novel determinants involved in LR patterning?
+My biological question is, what are the novel determinants involved in LR patterning during heart development? To tackle
+this problem using the public data, I will perform post Quality control (post-QC) procedure and then 
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set( 
     fig.align = 'center', 
-    out.width = '65%', 
-    fig.asp   = 0.45,
+    out.width = '70%', 
     comment   = '#>')
+
 options(width = 85)
+
 pkgs <- c( 'tidyverse','Rsubread','org.Mm.eg.db','edgeR',
            'limma', 'DESeq2', 'genefilter','grid',
-           'openxlsx','pheatmap','gridExtra','ggrepel',
-           'annotate','clusterProfiler',
-           'GGally','RColorBrewer','ggbio', 'ggreprel',
-           'cluster','factoextra','ggpubr',
-           'Rsamtools', 'devtools','parallel',
-           'GenomicAlignments', 'BiocParallel',
+           'openxlsx','pheatmap','gridExtra',
+           'annotate','clusterProfiler','cowplot',
+           'RColorBrewer', 'ggrepel',
+           'cluster','devtools','DiagrammeR',
            'reshape2', 'stringr','rtracklayer'
          )
+
 load.lib <- lapply(pkgs, require, character.only = TRUE)
 ```
 
+```{r analysis design, include = TRUE}
+graph <-
+    create_graph() %>%
+    set_graph_name('analysis pipeline') %>%
+    set_global_graph_attrs('graph', 'overlap', 'true') %>%
+    set_global_graph_attrs('node', 'color', 'white') %>%
+    set_global_graph_attrs('node', 'fontname', 'Arial') %>%
+    add_n_nodes(4) %>%
+    select_nodes_by_id(c(1:4)) %>% 
+    set_node_attrs_ws('shape', 'retangle') %>%
+    set_node_attrs_ws('style', 'filled') %>%
+    set_node_attrs_ws('color', 'white') %>%
+    clear_selection %>%
+    add_edges_w_string(
+      '1->2 2->3 3->4', 'black') %>%
+    set_node_attrs('label',c( 'Ask a good biological question',
+                              'Design a working pipeline to crack it',
+                              'Explore and interpret the data',
+                              'Draw publishable figures in the coda')) %>%
+    set_node_attrs('fontsize',10) %>%
+    set_edge_attrs('arrowsize', 1)
+
+render_graph(graph)
+```
 
 this is my own setting in our computation server. I have configured the path to 
 the required reference genomes and corresponding annotation files.
 
 ```{r parameter setting, include = FALSE}
 
-mm10.genome.file     <- file.path('/mnt/date/igenomes/Mus_musculus/UCSC/mm10/Sequence/WholeGenomeFasta/genome.fa')
-rsubread.index.lib   <- file.path('/mnt/date/igenomes/rsubread')
+mm10.genome.file          <- file.path('/mnt/date/igenomes/Mus_musculus/UCSC/mm10/Sequence/WholeGenomeFasta/genome.fa')
+rsubread.index.lib        <- file.path('/mnt/date/igenomes/rsubread')
 lncRmRNA.GRCm38.GTF.file  <- file.path('/mnt/date/genomelib/annotation/gencode/GRCm38.mouse.GTF')
 GSE85728.output.dir       <- file.path('/home/zhenyisong/biodata/cardiodata/GSE85728/rsubread')
 raw.data.path             <- file.path('/home/zhenyisong/biodata/cardiodata/GSE85728')
@@ -132,9 +158,9 @@ In this tutorial, I use the preprocessed data (Rdata, saved objects,
 GSE85728.rsubread.gencode & gencode.GRCh38.mouse) generated from the above steps
 to show the inference procedure below.
 
-```{r load demo data, include = TRUE}
+```{r load demo data, include = FALSE}
 
-setwd("../data")
+setwd('../data')
 load('yisong.Demo.Rdata')
 ls()
 
@@ -143,11 +169,11 @@ ls()
 Raw data already processed and we get the mapping count data
 and annotation files.
 
-```{r figure reports, message = FALSE}
+```{r post process data, cache = TRUE, message = FALSE}
 
-"
-this will extract all gene ensembl id from rsubread feathrecount object
-"
+#---
+#this will extract all gene ensembl id from rsubread feathrecount object
+#---
 GRCm38.genenames <- GSE85728.rsubread.gencode %$% annotation %$% 
                     GeneID %>% sub('.\\d+$','',., perl = F) %>%
                     mapIds( org.Mm.eg.db, keys = ., column = 'SYMBOL', 
@@ -178,8 +204,8 @@ rnaseq.rlog.func   <- function(genes,annot) {
                           DGEList(genes = annot) %>% 
                           calcNormFactors() %>% rpkm(log = T)
                       }
-GSE85728.rpkm <- rnaseq.rlog.func( GSE85728.rsubread.gencode, 
-                                   GSE85728.rsubread.gencode$annotation)
+GSE85728.rpkm      <- rnaseq.rlog.func( GSE85728.rsubread.gencode, 
+                                        GSE85728.rsubread.gencode$annotation)
 
 "
 I change the original column names to the new names having clear
@@ -206,15 +232,18 @@ apply.mean.func    <- function(df.matrix, col_nums) {
 comparision.list   <- list( LVP0 = 1:3,   LVP3 = 4:6,
                             LVP7 = 7:9,   RVP0 = 10:12,
                             RVP3 = 13:15, RVP7 = 16:17 )
-time.point.rpkm  <- map(comparision.list, apply.mean.func, df.matrix = GSE85728.rpkm) %>%
-                    as.data.frame() %>% mutate(GeneName = GRCm38.genenames) %>%
-                    mutate(EnsemblID = GSE85728.rsubread.gencode$annotation$GeneID ) %>%
-                    inner_join(GSE85728.extra.annot, by = c('EnsemblID' = 'GeneID')) %>%
-                    as_tibble()
+time.point.rpkm    <- map(comparision.list, apply.mean.func, df.matrix = GSE85728.rpkm) %>%
+                      as.data.frame() %>% mutate(GeneName = GRCm38.genenames) %>%
+                      mutate(EnsemblID = GSE85728.rsubread.gencode$annotation$GeneID ) %>%
+                      inner_join(GSE85728.extra.annot, by = c('EnsemblID' = 'GeneID')) %>%
+                      as_tibble()
 
+```
 
+```{r Figure 1A, fig.show = 'hide'}
+graph.text.size    <- 8
 left.right.markers <- list()
-QC.genename     <- 'Myl2'
+QC.genename        <- 'Myl2'
 #---
 # I always, like in biological experiments, use the postive 
 # control to validate my results. In the public data, I prefer
@@ -236,12 +265,14 @@ data.QC.checker <- time.point.rpkm %>%
                    scale_x_discrete( limits = c('P0','P3','P7')) +
                    xlab('developmental stages') +
                    ylab('gene expression log(rpkm)') +
-                   ggtitle( paste('gene symbol', QC.genename, 'QC checke', sep = ' ')) +
-                   theme(plot.title = element_text(hjust = 0.5))
-(data.QC.checker)
+                   labs( title = paste('gene symbol', QC.genename, 'QC checker', sep = ' ')) +
+                   theme( plot.title = element_text(hjust = 0.5)) +
+                   theme( aspect.ratio = 1, text = element_text(size = graph.text.size),
+                          plot.title   = element_blank())
+#(data.QC.checker)
+```
 
-
-
+```{r PCA analysis, cache = TRUE}
 # PCA analysis for GSE85728 (RNA-seq), data validation check
 #---
 
@@ -282,7 +313,10 @@ text( GSE85728.vsd.PCA$x[,1], GSE85728.vsd.PCA$x[,2],
 # this make life easier and simple.
 #---
 
-pca.no         <- dim(GSE85728.vsd.PCA$x)[2]
+pca.no            <- dim(GSE85728.vsd.PCA$x)[2]
+```
+
+```{r Figure 1B, fig.show = 'hide'}
 
 scree.plot.ggplot <- {GSE85728.vsd.PCA$sdev^2} %>%
                      {./sum(.)} %>% 
@@ -297,9 +331,13 @@ scree.plot.ggplot <- {GSE85728.vsd.PCA$sdev^2} %>%
                      geom_line(aes(x = pca, y = variance), size = 0.8) +
                      scale_linetype_discrete() +
                      theme(legend.position = 'none') +
-                     theme_classic()
-(scree.plot.ggplot)
+                     theme_classic() +
+                     theme( aspect.ratio = 1, text = element_text(size = graph.text.size))
+#(scree.plot.ggplot)
+```
 
+
+```{r Figure 1C, fig.show = 'hide'}
 cumsum.plot.ggplot <- {GSE85728.vsd.PCA$sdev^2} %>%
                       {./sum(.)} %>% 
                       {data.frame(variance = cumsum(.), pca = c(1:pca.no))}%>%
@@ -312,16 +350,19 @@ cumsum.plot.ggplot <- {GSE85728.vsd.PCA$sdev^2} %>%
                       geom_line(aes(x = pca, y = variance),size = 0.8) +
                       scale_linetype_discrete() +
                       theme(legend.position = 'none') +
-                      theme_classic()
-(cumsum.plot.ggplot)
+                      theme_classic() +
+                      theme( aspect.ratio = 1, text = element_text(size = graph.text.size))
+#(cumsum.plot.ggplot)
+```
 
-GSE85728.PCA.ggplot <- as.data.frame(GSE85728.vsd.PCA$x) %>% 
+```{r Figure 1D, fig.show = 'hide'}
+GSE85728.PCA.ggplot <-  as.data.frame(GSE85728.vsd.PCA$x) %>% 
                         mutate(color.choice = { rownames(.) %>% 
                                                 str_replace_all('_.*$', '') %>%
                                                 as.factor}) %>%
                         ggplot(data = . ) + 
                         geom_point( aes(x = PC1, y = PC2, color = color.choice), 
-                                    size = 3, show.legend = TRUE) + 
+                                    size = 3, show.legend = FALSE) + 
                         scale_colour_manual( name   = 'GSE85728 lncRNA sample stages',
                                              values = c( 'magenta','orangered', 'violetred',
                                                          'steelblue','royalblue','navyblue'),
@@ -329,9 +370,33 @@ GSE85728.PCA.ggplot <- as.data.frame(GSE85728.vsd.PCA$x) %>%
                         geom_text_repel( aes(x = PC1, y = PC2), 
                                          label = sample.names, 
                                          color = 'grey80', size = 2.5, fontface = 'bold') +
-                        theme_classic()
-(GSE85728.PCA.ggplot)
+                        theme_classic() +
+                        theme( aspect.ratio = 1, text = element_text(size = graph.text.size))
+#(GSE85728.PCA.ggplot)
 
+```
+
+```{r Figure 1, eval = TRUE}
+
+GSE85728.final.QC.figure <- ggdraw() +
+                            draw_plot(data.QC.checker,      x =  0, y = .5,  width = .5, height = .5) +
+                            draw_plot(scree.plot.ggplot,    x = .5, y = .5,  width = .5, height = .5) +
+                            draw_plot(cumsum.plot.ggplot,   x =  0, y =  0,  width = .5, height = .5) +
+                            draw_plot(GSE85728.PCA.ggplot,  x = .5, y =  0,  width = .5, height = .5) +
+                            draw_plot_label( label = LETTERS[1:4],
+                                             x     = c(0,.5,0,.5),
+                                             y     = c(1,1,.5,.5),
+                                             size  = 10)
+(GSE85728.final.QC.figure)
+
+```
+
+
+```{r epilogue, results = 'hide', message = FALSE }
+session_info()
 ```
 ## Discussion
 ## References
+```{r reference, include = FALSE}
+knitr::write_bib()
+```
