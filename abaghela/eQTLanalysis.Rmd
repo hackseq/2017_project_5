@@ -109,31 +109,9 @@ setkey(geneInfo, chromosome_name, start_position, end_position)
 mapped <- foverlaps(snpMetaData[,c(2,1,4,7)] ,geneInfo, type= "any", which= FALSE) %>% na.omit()
 ```
 
-## Plotting expression of SNPs within DAB1 gene.
-
-
-```{r}
-mapped$hgnc_symbol %>% table() %>% sort(decreasing=TRUE) %>% head(20)
-
-mappedDAB1 <- mapped %>% subset(hgnc_symbol == "DAB1") 
-snpData %>% subset(V1 %in% mappedDAB1$marker.ID)
-
-snpDataDAB1 <- snpData %>% subset(select= c("V1", mappedDAB1$snp))
-exprDAB1 <- exprData %>% subset(subset = GeneId %in% "DAB1")
-
-snpDataDAB1 %<>% melt.data.table()
-exprDAB1 %<>% melt.data.table()
-
-colnames(snpDataDAB1) <- c("id", "snp", "genotype")
-colnames(exprDAB1) <- c("GeneId", "id", "expr")
-
-mergedDAB1 <- merge(snpDataDAB1, exprDAB1, by= "id")
-
-mergedDAB1 %>% ggplot(aes(x= as.character(genotype), expr)) + geom_boxplot( fill="grey") + geom_jitter(colour="darkgrey", alpha= 0.3) + facet_wrap(~snp)
-```
-
 ## Preparing data table for linear modelling
 
+Our goal is to create a single data table which is easy for linear modelling and exploring the data. melt.data.table() is going to be our main way to do that. We can then merge the data.table by common variables. 
 ```{r}
 snpDataMelt <- snpData %>% melt.data.table()
 exprDataMelt <- exprData %>% melt.data.table()
@@ -149,14 +127,45 @@ mergedDT <- merge(snpDataMelt, mapped, by= "snp") %>% merge(exprDataMelt, by= c(
 lapply(mergedDT, class)
 ```
 
-## 
+## Plotting expression of SNPs within DAB1 gene.
 
 ```{r}
+mapped$hgnc_symbol %>% table() %>% sort(decreasing=TRUE) %>% head(20)
 
-#test <- mergedDT[1:1000,]
-#test 
+mergedDAB1 <- mergedDT %>% subset(GeneId == "DAB1")
 
-
-#fit <- mapply(function(expr, genotype) lm(expr ~ genotype), mergedDT[-c(3,4)], mergedDT[-c(2,5)], SIMPLIFY=FALSE)
+mergedDAB1 %>% ggplot(aes(x= as.character(genotype), expr)) + geom_boxplot( fill="grey") + geom_jitter(colour="darkgrey", alpha= 0.3) + facet_wrap(~snp)
 ```
+
+## Determining SNP effects with linear regression 
+
+To see if changes in genotype effect the expression of genes we will fit a pretty simple linear regression model to our data. We will be using lm() for this, a base R function. 
+```{r}
+fit <- by(mergedDT, mergedDT$snp, function(d) lm(d$expr ~ d$genotype, data = d))
+
+# The statistics/p value we are interested in is quite nested within the fit variable. We will use lapply multiple times to extract this value. 
+
+fitStats <- lapply(fit, function(x) summary(x)) %>% lapply(function(x) x[["coefficients"]]) %>% lapply(function(x) melt(x)) %>% lapply(function(x) x[8,3]) %>% simplify2array()
+
+fitStatsFilter <- subset(fitStats, fitStats < 0.005) 
+fitStatsFilter %>% length()
+```
+
+## Plotting the expression values of genes effected by SNPs
+
+I am plotting the snps on seperate graphs to small changes in expression can be seen.
+```{r}
+set.seed(20) # We will randomly select SNPs from our filtered list of SNPs
+
+mergedDT[snp %in% names(sample(fitStatsFilter, 1))] %>% ggplot(aes(x= as.character(genotype), expr)) + geom_boxplot(fill="grey") + geom_jitter(colour="darkgrey", alpha= 0.3) + facet_wrap(~snp)
+
+mergedDT[snp %in% names(sample(fitStatsFilter, 1))] %>% ggplot(aes(x= as.character(genotype), expr)) + geom_boxplot(fill="grey") + geom_jitter(colour="darkgrey", alpha= 0.3) + facet_wrap(~snp)
+
+mergedDT[snp %in% names(sample(fitStatsFilter, 1))] %>% ggplot(aes(x= as.character(genotype), expr)) + geom_boxplot(fill="grey") + geom_jitter(colour="darkgrey", alpha= 0.3) + facet_wrap(~snp)
+```
+
+So there you have it, a very simple eQTL workflow with data.table and biomaRt. 
+Acknowledgments:
+Hackseq Team 6 (Team Lead: Bruno Grande)
+Peter Humburg (http://jknightlab.github.io/eqtl-intro/exercises/exercises_and_solutions.html)
 
