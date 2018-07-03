@@ -95,7 +95,7 @@ plot(clusters, cex = 0.04)
 
 In agreement with PCA, there seem to be two overall clusters, but that they could each be further deconvoluted. The thing to keep in mind for hierarchical clustering is that it's very sensitive to being skewed by noise.
 
-##tSNE
+## tSNE
 
 tSNE differs from the other methods introduced so far in that it does not assume that the relationships between features are linear. Instead, it seeks the underlying data structure based on probability distributions with random walk on neighbourhood graphs. While the focus for linear dimensionality reduction is on ensuring dissimilar points are placed far from one another in fewer dimensions; the focus for non-linear is that similar points are placed close together. t-SNE, however, has global strength: it also maps dissimilar points to distant relative locations.
 
