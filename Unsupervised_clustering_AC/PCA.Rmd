@@ -82,7 +82,7 @@ coefmap(aout.4)
 
 ## Hierarchical clustering
 
-Hierarchical clustering builds a relationship between samples from the bottom up, i.e. from the starting belief that all samples are separate and not related to one another. Each point is this a cluster. The two nearest clusters are identified and combined. Depending on how 'nearest' is defined, various different methods and endpoints are used:
+Hierarchical clustering builds a relationship between samples from the bottom up, i.e. from the starting belief that all samples are separate and not related to one another. Each point is thus a cluster. The two nearest clusters are identified and combined. Depending on how 'nearest' is defined, various different methods and endpoints are used:
 - Find the maximum possible distance between points belonging to two different clusters = complete linkage clustering
 - Find the minimum possible distance between points belonging to two different clusters = single linkage clustering
 - Find all possible pairwise distances for points belonging to two different clusters and then calculate the average = mean linkage clustering
