@@ -19,19 +19,19 @@ download.file("https://github.com/hackseq/2017_project_5/raw/master/data/exprDat
 expressionData <- read.csv("exprData.csv.gz", header = TRUE, row.names = 1, fill = TRUE)
 ```
 
-The data needs to be transposed, such that variables (genes) are columns and samples are rows
+The data need to be transposed, such that variables (genes) are columns and samples are rows.
 
 ```{r}
 data_for_PCA <- t(expressionData)
 ```
 
-The cmdscale function calculates a matrix of dissimilarities (mds) from the transposed data and will also provide information about the proportion of explained variance by calculating Eigen values. k represents the maximum dimension of the space which the data are to be represented in
+The cmdscale function calculates a matrix of dissimilarities (mds) from the transposed data and will also provide information about the proportion of explained variance by calculating Eigen values. The variable k in the expression below represents the maximum number of dimensions of the space in which the data are to be represented.
 
 ```{r}
 mds <- cmdscale(dist(data_for_PCA), k=3, eig=TRUE)  
 ```
 
-Plotting this variable as a percentage will help you determine how many components can explain the variability in your dataset and thus how many dimensions to look at
+Plotting this variable as a percentage will help you determine how many components can explain the variability in your dataset and thus how many dimensions to look at.
 k = the maximum dimension of the space which the data are to be represented in
 eig = indicates whether eigenvalues should be returned
 
@@ -56,7 +56,7 @@ plot(mds[,1], -mds[,2], type="p", xlab="Dimension 1", ylab="Dimension 2", main="
 
 ## NMF
 
-NMF stands for non-negative matrix factorisation and is employed in image and text reduction. Two matrices are calculated that muultiply to approximately the original matrix; one of the main methods used to iteratively calculate the matrices is linear regression.
+NMF stands for non-negative matrix factorisation and is employed in image and text reduction. Two matrices are calculated that muultiply to approximately the original matrix. One of the main methods used to iteratively calculate the matrices in NMF is linear regression.
 
 ```{r}
 suppressPackageStartupMessages(library(NMF)) 
@@ -65,7 +65,7 @@ aout.3 <- nmf(expressionData,3)
 aout.4 <- nmf(expressionData,4)
 ```
 
-The W and H variables within the 'fit' parameter indicate the matrix breakdown
+The W and H variables within the 'fit' parameter indicate the matrix breakdown.
 
 ```{r}
 w <- aout@fit@W
@@ -82,22 +82,24 @@ coefmap(aout.4)
 
 ## Hierarchical clustering
 
-Hierarchical clustering builds a relationship between samples from the bottom up, i.e. from the starting belief that all samples are separate and not related to one another. Each point is thus a cluster. The two nearest clusters are identified and combined. Depending on how 'nearest' is defined, various different methods and endpoints are used:
+Hierarchical clustering builds a relationship between samples from the bottom up, i.e. from the starting belief that all samples are separate and not related to one another. Each point is thus a cluster. The two nearest clusters are identified and combined. Depending on how 'nearest' is defined, various different methods are used:
 - Find the maximum possible distance between points belonging to two different clusters = complete linkage clustering
 - Find the minimum possible distance between points belonging to two different clusters = single linkage clustering
 - Find all possible pairwise distances for points belonging to two different clusters and then calculate the average = mean linkage clustering
 - Find the centroid of each cluster and calculate the distance between centroids of two clusters = centroid linkage clustering
+
+The method used would necessarily lead to varying outcomes.
 
 ```{r}
 clusters <- hclust(dist(data_for_PCA))
 plot(clusters, cex = 0.04)
 ```
 
-In agreement with PCA, there seem to be two overall clusters, but that they could each be further deconvoluted. The thing to keep in mind for hierarchical clustering is that it's very sensitive to being skewed by noise.
+In agreement with PCA, there seem to be two overall clusters, which each could be further deconvoluted. The thing to keep in mind for hierarchical clustering is that it's very sensitive to being skewed by noise.
 
 ## tSNE
 
-tSNE differs from the other methods introduced so far in that it does not assume that the relationships between features are linear. Instead, it seeks the underlying data structure based on probability distributions with random walk on neighbourhood graphs. While the focus for linear dimensionality reduction is on ensuring dissimilar points are placed far from one another in fewer dimensions; the focus for non-linear is that similar points are placed close together. t-SNE, however, has global strength: it also maps dissimilar points to distant relative locations.
+tSNE differs from the other methods introduced so far in that it does not assume that the relationships between features are linear. Instead, it seeks the underlying data structure based on probability distributions with random walk on neighbourhood graphs. While the focus for linear dimensionality reduction is on ensuring dissimilar points are placed far from one another in fewer dimensions, the focus for non-linear is that similar points are placed close together. t-SNE, while being non-linear, has global strength: it also maps dissimilar points to distant relative locations.
 
 ```{r}
 library(Rtsne)
