@@ -4,14 +4,16 @@ author: "Florian Privé"
 date: "October 21, 2017"
 output: html_document
 bibliography: refs.bib
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(fig.align = "center", out.width = "65%", fig.asp = 0.75, cache = TRUE)
+knitr::opts_chunk$set(fig.align = "center", out.width = "65%", fig.asp = 0.75)
 options(width = 85)
 ```
 
-A biological analysis is sometimes more appropriately called a pipeline. This is because it generally consists of many steps, using many different software and data formats. Yet, these analysis pipelines are becoming very complex and usually makes use of many bash/perl scripts. For people like me who don't really know that much bash or perl, it can be really hard to understand those scripts.
+A biological analysis is sometimes more appropriately called a pipeline. This is because it generally consists of many steps, using many different software and data formats. Yet, these analysis pipelines are becoming very complex and usually makes use of bash/perl scripts. For people like me who don't really know that much bash or perl, it can be really hard to understand those scripts.
 
 What is important in these pipelines? To list what comes to my mind:
 
@@ -21,24 +23,27 @@ What is important in these pipelines? To list what comes to my mind:
 - visualize results
 - report results
 
-I think we can do each of these operations in R.
+I think we could do each of these operations in R.
 And I think we should. 
 
-The main reason would be to put all your analysis in a single notebook where you have all your code, results and possibly some writing. Using notebooks is good practice and makes it possible to have a **fully reproducible analysis**, which will a standard in years to come. Another reason is simply that it's easier!
+The main reason would be to put all your analysis in a single notebook where you have all your code, results and possibly some writing. Using notebooks is good practice and makes it possible to have a **fully reproducible analysis**, which will become a standard in years to come. Another reason is simply that it is easier!
 
-In this tutorial, I'll show an example of a moderately complex analysis of the HapMap3 data (phase III), all in R.
+In this tutorial, I show an example of a moderately complex analysis of the HapMap3 data (phase III), all in R.
 
 ## Example with HapMap3
 
 ### Get the data
 
-Don't just give a link to the data, use an R command to download the data directly. Mouse clicks prevent reproducibility.
+Do not just give a link to the data, use an R command to download the data directly. Mouse clicks prevent reproducibility.
 
-```{r, eval=FALSE}
+```{r}
 # Get the URL of the data
 site <- "https://ftp.ncbi.nlm.nih.gov/hapmap/genotypes/2009-01_phaseIII/plink_format/"
 name <- "hapmap3_r2_b36_fwd.qc.poly"
 ext <- ".tar.bz2"
+```
+
+```{r, eval=FALSE}
 # Download the file 
 download.file(paste0(site, name, ext), tmp <- tempfile(fileext = ext))
 # Uncompress the downloaded file in directory data/
@@ -47,31 +52,32 @@ untar(tmp, exdir = "data")
 
 ### Use PLINK to combine datasets
 
-PLINK is a very efficient command-line software very useful for preprocessing of GWA data [@chang2015second; @purcell2007plink].
+PLINK is a very efficient command-line software very useful for preprocessing of genome-wide data [@chang2015second; @purcell2007plink].
 
 ```{r}
+# devtools::install_github("privefl/bigsnpr")
 plink <- bigsnpr::download_plink()
 ```
 
 ```{r}
 files <- rev(list.files("data/hapmap3_pop", full.names = TRUE))
-write(files[-(1:2)], tmp <- tempfile(), ncolumns = 2)
+write(files, tmp <- tempfile(), ncolumns = 2)
 library(glue)
-system(glue("{plink} --file {tools::file_path_sans_ext(files[1])}",
-            " --merge-list {tmp}",
-            " --out data/hapmap3"))
+system(glue("{plink} --merge-list {tmp} --out data/hapmap3"))
 ```
 
 ### Use PLINK for quality control
 
 ```{r}
-system(glue("{plink} --bfile data/hapmap3",
-            " --maf 0.05",
-            " --geno 0.05", 
-            " --hwe 1e-10", 
-            " --autosome",
-            " --make-bed",
-            " --out data/hapmap3_qc"))
+system(glue(
+  "{plink} --bfile data/hapmap3",
+  " --maf 0.05",
+  " --geno 0.05", 
+  " --hwe 1e-10", 
+  " --autosome",
+  " --make-bed",
+  " --out data/hapmap3_qc"
+))
 ```
 
 There exists much more quality control steps but it is not the objective of this tutorial. For details, please refer to [@anderson2010data].
@@ -88,58 +94,36 @@ system(glue("{plink} --bfile data/hapmap3_qc",
             " --exclude {tmp} --range",
             " --indep-pairwise 50 5 0.2",
             " --out {tmp}"))
-# Filter the data again
-system(glue("{plink} --bfile data/hapmap3_qc",
-            " --extract {tmp}.prune.in",
-            " --make-bed",
-            " --out {tmp}"))
 ```
 
 ### Compute Principal Components
 
-```{r}
-# Get EIGENSOFT
-download.file("https://data.broadinstitute.org/alkesgroup/EIGENSOFT/EIG-6.1.4.tar.gz",
-              tmp2 <- tempfile())
-smartpca <- "EIG-6.1.4/bin/smartpca"
-untar(tmp2, files = smartpca)
-```
-
-
-```{r}
-parfile <- glue("{tmp}.pca.par")
-  
-## Renaming so that Eigensoft can recognize file type
-system(glue("cp {tmp}.bim {tmp}.pedsnp"))  
-## Renaming so that Eigensoft can recognize file type
-system(glue("cp {tmp}.fam {tmp}.pedind"))  
-writeLines(glue(
-  "genotypename: {tmp}.bed
-  snpname: {tmp}.pedsnp
-  indivname: {tmp}.pedind
-  evecoutname: {tmp}.pca.evec
-  evaloutname: {tmp}.eval
-  altnormstyle: NO
-  numoutevec: 10
-  numoutlieriter: 0
-  numoutlierevec: 10
-  outliersigmathresh: 6
-  qtmode: 0
-  fastmode: 0"
-), con = parfile)
-## PCA
-system(glue("{smartpca} -p {parfile}"), ignore.stdout = TRUE)
+```{r PCA}
+# Compute first PCs based on pruned SNPs using PLINK
+system(glue("{plink} --bfile data/hapmap3_qc",
+            " --extract {tmp}.prune.in",
+            " --pca",
+            " --out {tmp}"))
 ```
 
 ```{r}
 # Get result and plot it (data.table is faster for reading/writing files)
-evec <- data.table::fread(glue("{tmp}.pca.evec"), 
-                          data.table = FALSE, skip = 1)
+readLines(glue("{tmp}.eigenvec"), n = 3)
+evec <- data.table::fread(glue("{tmp}.eigenvec"), data.table = FALSE)
+
+# Get population info
+txt <- "relationships_w_pops_121708.txt"
+download.file(paste0(site, txt), paste0("data/", txt))
+info <- data.table::fread(paste0("data/", txt), data.table = FALSE)
+fam <- data.table::fread("data/hapmap3_qc.fam", data.table = FALSE)
+fam <- dplyr::left_join(fam, info, by = c("V1" = "FID", "V2" = "IID"))
+
 
 library(ggplot2)
-bigstatsr:::MY_THEME(ggplot(evec)) + 
-  geom_point(aes(V2, V3)) +
-  labs(x = "PC1", y = "PC2")
+ggplot(evec) + 
+  bigstatsr::theme_bigstatsr() +
+  geom_point(aes(V3, V4, color = fam$population)) +
+  labs(x = "PC1", y = "PC2", color = "Population")
 ```
 
 

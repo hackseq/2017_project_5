@@ -22,9 +22,10 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
-<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -33,10 +34,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -91,8 +94,14 @@ img {
 .tabbed-pane {
   padding-top: 12px;
 }
+.html-widget {
+  margin-bottom: 20px;
+}
 button.code-folding-btn:focus {
   outline: none;
+}
+summary {
+  display: list-item;
 }
 </style>
 
@@ -108,7 +117,6 @@ body {
   padding-top: 56px;
   margin-top: -56px;
 }
-
 .section h2 {
   padding-top: 56px;
   margin-top: -56px;
@@ -128,6 +136,43 @@ body {
 .section h6 {
   padding-top: 56px;
   margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
 }
 </style>
 
@@ -149,18 +194,77 @@ $(document).ready(function () {
 });
 </script>
 
-
 <div class="container-fluid main-container">
 
 <!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
 <script>
 $(document).ready(function () {
   window.buildTabsets("TOC");
 });
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
 </script>
 
 <!-- code folding -->
-
 
 
 
@@ -256,7 +360,7 @@ $(document).ready(function () {
 </div>
 
 
-<p>A biological analysis is sometimes more appropriately called a pipeline. This is because it generally consists of many steps, using many different software and data formats. Yet, these analysis pipelines are becoming very complex and usually makes use of many bash/perl scripts. For people like me who don’t really know that much bash or perl, it can be really hard to understand those scripts.</p>
+<p>A biological analysis is sometimes more appropriately called a pipeline. This is because it generally consists of many steps, using many different software and data formats. Yet, these analysis pipelines are becoming very complex and usually makes use of bash/perl scripts. For people like me who don’t really know that much bash or perl, it can be really hard to understand those scripts.</p>
 <p>What is important in these pipelines? To list what comes to my mind:</p>
 <ul>
 <li>use the command line</li>
@@ -265,43 +369,44 @@ $(document).ready(function () {
 <li>visualize results</li>
 <li>report results</li>
 </ul>
-<p>I think we can do each of these operations in R. And I think we should.</p>
-<p>The main reason would be to put all your analysis in a single notebook where you have all your code, results and possibly some writing. Using notebooks is good practice and makes it possible to have a <strong>fully reproducible analysis</strong>, which will a standard in years to come. Another reason is simply that it’s easier!</p>
-<p>In this tutorial, I’ll show an example of a moderately complex analysis of the HapMap3 data (phase III), all in R.</p>
+<p>I think we could do each of these operations in R. And I think we should.</p>
+<p>The main reason would be to put all your analysis in a single notebook where you have all your code, results and possibly some writing. Using notebooks is good practice and makes it possible to have a <strong>fully reproducible analysis</strong>, which will become a standard in years to come. Another reason is simply that it is easier!</p>
+<p>In this tutorial, I show an example of a moderately complex analysis of the HapMap3 data (phase III), all in R.</p>
 <div id="example-with-hapmap3" class="section level2">
 <h2>Example with HapMap3</h2>
 <div id="get-the-data" class="section level3">
 <h3>Get the data</h3>
-<p>Don’t just give a link to the data, use an R command to download the data directly. Mouse clicks prevent reproducibility.</p>
+<p>Do not just give a link to the data, use an R command to download the data directly. Mouse clicks prevent reproducibility.</p>
 <pre class="r"><code># Get the URL of the data
 site &lt;- &quot;https://ftp.ncbi.nlm.nih.gov/hapmap/genotypes/2009-01_phaseIII/plink_format/&quot;
 name &lt;- &quot;hapmap3_r2_b36_fwd.qc.poly&quot;
-ext &lt;- &quot;.tar.bz2&quot;
-# Download the file 
+ext &lt;- &quot;.tar.bz2&quot;</code></pre>
+<pre class="r"><code># Download the file 
 download.file(paste0(site, name, ext), tmp &lt;- tempfile(fileext = ext))
 # Uncompress the downloaded file in directory data/
 untar(tmp, exdir = &quot;data&quot;)</code></pre>
 </div>
 <div id="use-plink-to-combine-datasets" class="section level3">
 <h3>Use PLINK to combine datasets</h3>
-<p>PLINK is a very efficient command-line software very useful for preprocessing of GWA data <span class="citation">(Chang et al. 2015; S. Purcell et al. 2007)</span>.</p>
-<pre class="r"><code>plink &lt;- bigsnpr::download_plink()</code></pre>
+<p>PLINK is a very efficient command-line software very useful for preprocessing of genome-wide data <span class="citation">(Chang et al. 2015; S. Purcell et al. 2007)</span>.</p>
+<pre class="r"><code># devtools::install_github(&quot;privefl/bigsnpr&quot;)
+plink &lt;- bigsnpr::download_plink()</code></pre>
 <pre class="r"><code>files &lt;- rev(list.files(&quot;data/hapmap3_pop&quot;, full.names = TRUE))
-write(files[-(1:2)], tmp &lt;- tempfile(), ncolumns = 2)
+write(files, tmp &lt;- tempfile(), ncolumns = 2)
 library(glue)
-system(glue(&quot;{plink} --file {tools::file_path_sans_ext(files[1])}&quot;,
-            &quot; --merge-list {tmp}&quot;,
-            &quot; --out data/hapmap3&quot;))</code></pre>
+system(glue(&quot;{plink} --merge-list {tmp} --out data/hapmap3&quot;))</code></pre>
 </div>
 <div id="use-plink-for-quality-control" class="section level3">
 <h3>Use PLINK for quality control</h3>
-<pre class="r"><code>system(glue(&quot;{plink} --bfile data/hapmap3&quot;,
-            &quot; --maf 0.05&quot;,
-            &quot; --geno 0.05&quot;, 
-            &quot; --hwe 1e-10&quot;, 
-            &quot; --autosome&quot;,
-            &quot; --make-bed&quot;,
-            &quot; --out data/hapmap3_qc&quot;))</code></pre>
+<pre class="r"><code>system(glue(
+  &quot;{plink} --bfile data/hapmap3&quot;,
+  &quot; --maf 0.05&quot;,
+  &quot; --geno 0.05&quot;, 
+  &quot; --hwe 1e-10&quot;, 
+  &quot; --autosome&quot;,
+  &quot; --make-bed&quot;,
+  &quot; --out data/hapmap3_qc&quot;
+))</code></pre>
 <p>There exists much more quality control steps but it is not the objective of this tutorial. For details, please refer to <span class="citation">(Anderson et al. 2010)</span>.</p>
 </div>
 <div id="get-a-pruned-dataset" class="section level3">
@@ -313,51 +418,36 @@ bigsnpr:::write.table2(bigsnpr::LD.wiki34, tmp &lt;- tempfile())
 system(glue(&quot;{plink} --bfile data/hapmap3_qc&quot;,
             &quot; --exclude {tmp} --range&quot;,
             &quot; --indep-pairwise 50 5 0.2&quot;,
-            &quot; --out {tmp}&quot;))
-# Filter the data again
-system(glue(&quot;{plink} --bfile data/hapmap3_qc&quot;,
-            &quot; --extract {tmp}.prune.in&quot;,
-            &quot; --make-bed&quot;,
             &quot; --out {tmp}&quot;))</code></pre>
 </div>
 <div id="compute-principal-components" class="section level3">
 <h3>Compute Principal Components</h3>
-<pre class="r"><code># Get EIGENSOFT
-download.file(&quot;https://data.broadinstitute.org/alkesgroup/EIGENSOFT/EIG-6.1.4.tar.gz&quot;,
-              tmp2 &lt;- tempfile())
-smartpca &lt;- &quot;EIG-6.1.4/bin/smartpca&quot;
-untar(tmp2, files = smartpca)</code></pre>
-<pre class="r"><code>parfile &lt;- glue(&quot;{tmp}.pca.par&quot;)
-  
-## Renaming so that Eigensoft can recognize file type
-system(glue(&quot;cp {tmp}.bim {tmp}.pedsnp&quot;))  
-## Renaming so that Eigensoft can recognize file type
-system(glue(&quot;cp {tmp}.fam {tmp}.pedind&quot;))  
-writeLines(glue(
-  &quot;genotypename: {tmp}.bed
-  snpname: {tmp}.pedsnp
-  indivname: {tmp}.pedind
-  evecoutname: {tmp}.pca.evec
-  evaloutname: {tmp}.eval
-  altnormstyle: NO
-  numoutevec: 10
-  numoutlieriter: 0
-  numoutlierevec: 10
-  outliersigmathresh: 6
-  qtmode: 0
-  fastmode: 0&quot;
-), con = parfile)
-## PCA
-system(glue(&quot;{smartpca} -p {parfile}&quot;), ignore.stdout = TRUE)</code></pre>
+<pre class="r"><code># Compute first PCs based on pruned SNPs using PLINK
+system(glue(&quot;{plink} --bfile data/hapmap3_qc&quot;,
+            &quot; --extract {tmp}.prune.in&quot;,
+            &quot; --pca&quot;,
+            &quot; --out {tmp}&quot;))</code></pre>
 <pre class="r"><code># Get result and plot it (data.table is faster for reading/writing files)
-evec &lt;- data.table::fread(glue(&quot;{tmp}.pca.evec&quot;), 
-                          data.table = FALSE, skip = 1)
+readLines(glue(&quot;{tmp}.eigenvec&quot;), n = 3)</code></pre>
+<pre><code>## [1] &quot;1328 NA06984 0.020195 0.044255 -0.0100406 -0.0168748 0.0226282 0.00355131 -0.000642671 -0.000914571 0.00227462 -0.00378351 -0.0061861 4.06576e-05 -0.00356761 2.57855e-05 0.00430737 0.00157184 0.000507544 -0.000671943 0.00237496 0.0055083&quot;
+## [2] &quot;1328 NA06989 0.0196734 0.0433813 -0.00835398 -0.0150484 0.0216197 -0.00347001 0.000290989 0.00110012 -0.000879973 0.00799929 0.000625262 0.00226367 -0.00617662 0.00371815 0.0019478 0.0024499 -0.000891975 0.00197824 0.00205231 -0.00154855&quot;
+## [3] &quot;1330 NA12335 0.0198508 0.0445815 -0.0105505 -0.0187938 0.0220378 -0.000335578 0.0035803 -0.0031238 0.00734259 0.00405858 -0.00266854 -0.00517518 0.00611168 -0.00197511 0.0116496 0.00503205 0.00181431 -0.00481878 0.00798023 0.000464057&quot;</code></pre>
+<pre class="r"><code>evec &lt;- data.table::fread(glue(&quot;{tmp}.eigenvec&quot;), data.table = FALSE)
+
+# Get population info
+txt &lt;- &quot;relationships_w_pops_121708.txt&quot;
+download.file(paste0(site, txt), paste0(&quot;data/&quot;, txt))
+info &lt;- data.table::fread(paste0(&quot;data/&quot;, txt), data.table = FALSE)
+fam &lt;- data.table::fread(&quot;data/hapmap3_qc.fam&quot;, data.table = FALSE)
+fam &lt;- dplyr::left_join(fam, info, by = c(&quot;V1&quot; = &quot;FID&quot;, &quot;V2&quot; = &quot;IID&quot;))
+
 
 library(ggplot2)
-bigstatsr:::MY_THEME(ggplot(evec)) + 
-  geom_point(aes(V2, V3)) +
-  labs(x = &quot;PC1&quot;, y = &quot;PC2&quot;)</code></pre>
-<p><img src="all-in-R_files/figure-html/unnamed-chunk-8-1.png" width="65%" style="display: block; margin: auto;" /></p>
+ggplot(evec) + 
+  bigstatsr::theme_bigstatsr() +
+  geom_point(aes(V3, V4, color = fam$population)) +
+  labs(x = &quot;PC1&quot;, y = &quot;PC2&quot;, color = &quot;Population&quot;)</code></pre>
+<p><img src="all-in-R_files/figure-html/unnamed-chunk-7-1.png" width="65%" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="discussion" class="section level2">
