@@ -6,5 +6,7 @@ tidyr
 readr
 purrr
 dplyr
+stringr
+forcats
 bigstatsr
 bigsnpr

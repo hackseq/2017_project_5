@@ -3,6 +3,8 @@ title: "Analysis results in a consistent data structure"
 author: "Florian Privé"
 date: "October 21, 2017"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -14,13 +16,13 @@ How do you store results of an analysis?
 
 When you have different parameters that are varying, when you compare many methods and when you want to keep all the results of an analysis, your code can become quite complex.
 
-In this tutorial, we'll make a comparison of machine learning methods for predicting disease based on small SNP data. We'll show how to use the tidyverse set of packages to make the analysis easier by using consistent data structures and functional programming. We'll use tibbles with [list-columns](http://r4ds.had.co.nz/many-models.html).
+In this tutorial, we make a comparison of machine learning methods for predicting disease based on small SNP data. We show how to use the tidyverse set of packages to make the analysis easier by using consistent data structures and functional programming. We use tibbles with [list-columns](http://r4ds.had.co.nz/many-models.html).
 
 ## A simulation made easy
 
 ### Data
 
-Let's use some 1000 Genomes data from [Gad Abraham's GitHub repository](https://github.com/gabraham/flashpca/tree/master/HapMap3) which have been filtered and quality-controled.
+Let's use some data from [Gad Abraham's GitHub repository](https://github.com/gabraham/flashpca/tree/master/HapMap3) which have been filtered and quality-controled.
 
 
 ```{r}
@@ -30,25 +32,22 @@ base <- paste0(
   "https://github.com/gabraham/flashpca/raw/master/HapMap3/",
   "1kg.ref.phase1_release_v3.20101123_thinned_autosomal_overlap")
 exts <- c(".bed", ".bim", ".fam")
-map2_int(paste0(base, exts), paste0(tmpfile, exts), ~download.file(.x, .y))
+walk2(paste0(base, exts), paste0(tmpfile, exts), ~download.file(.x, .y))
 ```
 
 ```{r}
 library(bigsnpr)
-rdsfile <- snp_readBed(paste0(tmpfile, ".bed"), tempfile())
+rdsfile <- snp_readBed(paste0(tmpfile, ".bed"))
 
 bigsnp <- snp_attach(rdsfile)
 G <- bigsnp$genotypes
+G[which(is.na(G[]))] <- 0  # quick and dirty imputation
 obj.svd <- snp_autoSVD(G, bigsnp$map$chromosome, bigsnp$map$physical.pos, ncores = 2)
 # Matrix of genotypes and first 10 PCs
 X <- cbind(G[], obj.svd$u)
 ```
 
 ### Methods' functions
-
-```{r, message=FALSE}
-library(tidyverse)
-```
 
 Each method's function returns a tibble (data frame) with 4 columns:
 
@@ -141,7 +140,7 @@ get_pheno <- function(
 
 ### Simulations
 
-First, we use `expand.grid` to create a data frame with all possible combination of parameters we compare.
+First, we use `expand.grid()` to create a data frame with all possible combination of parameters we compare.
 
 ```{r}
 results <- expand.grid(
@@ -154,7 +153,7 @@ results <- expand.grid(
   print()
 ```
 
-Then, we use package purrr to add a new column to the data frame with all the results. The main condition for a data frame is that each column has the same number of elements. So, by using lists, we can basically store any types of data in a data frame. For example, in column `"eval"` we store matrices, this is called a list-column. In the newly-created column `"res"`, we store data frames! We use tibbles instead of standard data frames because they print better.
+Then, we use package {purrr} to add a new column to the data frame with all the results. The main condition for a data frame is that each column has the same number of elements. So, by using lists, we can basically store any types of data in a data frame. For example, in column `"eval"` we store matrices, this is called a list-column. In the newly-created column `"res"`, we store data frames! We use tibbles instead of standard data frames because they print better.
 
 ```{r, cache=TRUE}
 results[["res"]] <- pmap(results, function(M, dist, num.simu) {
@@ -182,16 +181,16 @@ results
 
 ### Results
 
-First, we use function `unnest` of package `tidyr` so that we have a tidier data frame. To learn more about *tidy data*, please refer to [this vignette](http://tidyr.tidyverse.org/articles/tidy-data.html) and [this book chapter](http://r4ds.had.co.nz/tidy-data.html).
+First, we use function `unnest()` of package {tidyr} so that we have a tidier data frame. To learn more about *tidy data*, please refer to [this vignette](http://tidyr.tidyverse.org/articles/tidy-data.html) and [this book chapter](http://r4ds.had.co.nz/tidy-data.html).
 
 ```{r}
 (results <- unnest(results, res))
 ```
 
-To compute the AUC (a measure of prediction accuracy), we use purrr again and specify the type of the output we want (`_dbl` for doubles). Here, we could use function mutate of package dplyr instead of standard accessor `[[`.
+To compute the AUC (a measure of prediction accuracy), we use {purrr} again and specify the type of the output we want (`_dbl` for doubles). Here, we could use function `mutate()` of package {dplyr} instead of standard accessor `[[`.
 
 ```{r}
-results[["AUC"]] <- map_dbl(results[["eval"]], ~bigstatsr::AUC(.x[, 1], .x[, 2]))
+results[["AUC"]] <- map_dbl(results[["eval"]], ~ bigstatsr::AUC(.x[, 1], .x[, 2]))
 results
 ```
 
@@ -206,11 +205,11 @@ results %>%
 
 ### Visualise results
 
-Finally, let's use package ggplot2, also part of the tidyverse, to plot the results.
+Finally, let's use package {ggplot2}, also part of the tidyverse, to visualize results.
 
 ```{r}
 # Wrapper to use my own theme
-myggplot <- function(...) bigstatsr:::MY_THEME(ggplot(...))
+myggplot <- function(...) ggplot(...) + bigstatsr::theme_bigstatsr()
 ```
 
 ```{r}
@@ -218,8 +217,6 @@ myggplot(results) +
   geom_boxplot(aes(method, timing)) +
   scale_y_continuous(breaks = seq(0, 20, 2)) +
   facet_grid(M ~ dist) +
-  theme(strip.text.x = element_text(size = rel(2)),
-        strip.text.y = element_text(size = rel(2))) +
   ggtitle("Timings")
 ```
 
@@ -229,13 +226,11 @@ myggplot(results) +
   geom_boxplot(aes(method, AUC)) +
   scale_y_continuous(breaks = 0:10 / 10) +
   facet_grid(M ~ dist) +
-  theme(strip.text.x = element_text(size = rel(2)),
-        strip.text.y = element_text(size = rel(2))) +
   ggtitle("Predictive performance")
 ```
 
 ## Conclusion
 
-The main point of using tibbles to store results is that you have the inputs, raw outputs and transformed outputs in the same data structure. Moreover, this data structure contains information that are easy to manipulate and visualize. Finally, note that we didn't use a single loop in the whole method comparison.
+The main point of using tibbles to store results is that you have the inputs, raw outputs and transformed outputs in the same data structure. Moreover, this data structure contains information that you can easily manipulate and visualize. Finally, note that we did not use a single loop in the whole method comparison.
 
 The tidyverse set of packages is very convenient and consistent. You can learn more by reading [book R for Data Science](http://r4ds.had.co.nz/), freely available online.
