@@ -22,9 +22,10 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
-<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -33,10 +34,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -91,8 +94,14 @@ img {
 .tabbed-pane {
   padding-top: 12px;
 }
+.html-widget {
+  margin-bottom: 20px;
+}
 button.code-folding-btn:focus {
   outline: none;
+}
+summary {
+  display: list-item;
 }
 </style>
 
@@ -108,7 +117,6 @@ body {
   padding-top: 56px;
   margin-top: -56px;
 }
-
 .section h2 {
   padding-top: 56px;
   margin-top: -56px;
@@ -128,6 +136,43 @@ body {
 .section h6 {
   padding-top: 56px;
   margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
 }
 </style>
 
@@ -149,18 +194,77 @@ $(document).ready(function () {
 });
 </script>
 
-
 <div class="container-fluid main-container">
 
 <!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
 <script>
 $(document).ready(function () {
   window.buildTabsets("TOC");
 });
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
 </script>
 
 <!-- code folding -->
-
 
 
 
@@ -256,11 +360,11 @@ $(document).ready(function () {
 </div>
 
 
-<p>For multiple genomic data, most of the information can be stored as matrices. The most striking example is with SNP data, which can be stored as matrices with thousands to hundreds of thousands of rows (samples) with hundreds of thousands to dozens of millions of columns (SNPs) <span class="citation">(Bycroft et al. 2017)</span>. This results in datasets of GygaBytes to TeraBytes of data.</p>
+<p>For multiple genomic data, most of the information can be stored as matrices. The most striking example is with SNP data, which can be stored as matrices with thousands to hundreds of thousands of rows (samples) with hundreds of thousands to dozens of millions of columns (SNPs) <span class="citation">(Bycroft et al. 2018)</span>. This results in datasets of GygaBytes to TeraBytes of data.</p>
 <p>Other fields in genomics, such as proteomics or expression data, use data stored as matrices potentially of size larger than available memory.</p>
-<p>To address large data size in R, we can use memory-mapping for accessing large matrices stored on disk instead of in RAM. This has existed in R for several years thanks to package bigmemory <span class="citation">(Kane, Emerson, and Weston 2013)</span>.</p>
-<p>More recently, two packages which use the same principle as bigmemory have been developed: bigstatsr and bigsnpr <span class="citation">(Privé, Aschard, and Blum 2017)</span>. Package bigstatsr implements many statistical tools for several types of Filebacked Big Matrices (FBMs), making it usable for any type of genomic data that can be encoded as a matrix. The statistical tools in bigstatsr include implementation of multivariate sparse linear models, Principal Component Analysis (PCA), matrix operations, and numerical summaries. Package bigsnpr implements algorithms which are specific to the analysis of SNP arrays, making use of already implemented features in package bigstatsr.</p>
-<p>In this small tutorial, we’ll see the potential benefits of using memory-mapping instead of standard R matrices in memory, by using bigstatsr and bigsnpr.</p>
+<p>To address large data size in R, we can use memory-mapping for accessing large matrices stored on disk instead of in RAM. This has existed in R for several years thanks to package {bigmemory} <span class="citation">(Kane, Emerson, and Weston 2013)</span>.</p>
+<p>More recently, two packages that use the same principle as bigmemory have been developed: {bigstatsr} and {bigsnpr} <span class="citation">(Privé et al. 2018)</span>. Package {bigstatsr} implements many statistical tools for several types of Filebacked Big Matrices (FBMs), making it usable for any type of genomic data that can be encoded as a matrix. The statistical tools in {bigstatsr} include implementation of multivariate sparse linear models, truncated Principal Component Analysis (PCA), matrix operations, and numerical summaries. Package {bigsnpr} implements algorithms that are specific to the analysis of SNP arrays, making use of already implemented features in package {bigstatsr}.</p>
+<p>In this small tutorial, we see the potential benefits of using memory-mapping instead of standard R matrices in memory, by using {bigstatsr} and {bigsnpr}.</p>
 <div id="examples" class="section level2">
 <h2>Examples</h2>
 <div id="example-of-expression-data" class="section level3">
@@ -290,9 +394,9 @@ dim(mat)</code></pre>
 <pre class="r"><code>format(object.size(mat), units = &quot;MB&quot;)</code></pre>
 <pre><code>## [1] &quot;35.6 Mb&quot;</code></pre>
 <p>In this data, 96% of the information can be encoded as a matrix. For larger data, this could increase to more than 99%. Let us store this as a Filebacked Big Matrix (FBM).</p>
-<pre class="r"><code># https://github.com/privefl/bigstatsr
+<pre class="r"><code># devtools::install_github(&quot;privefl/bigstatsr&quot;)
 library(bigstatsr)
-fbm &lt;- big_copy(mat)
+fbm &lt;- as_FBM(mat)
 # Same data?
 all.equal(fbm[], mat, check.attributes = FALSE)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
@@ -301,8 +405,8 @@ format(object.size(fbm), units = &quot;MB&quot;)</code></pre>
 <pre><code>## [1] &quot;0 Mb&quot;</code></pre>
 <pre class="r"><code># File where the data is backed
 fbm$backingfile</code></pre>
-<pre><code>## [1] &quot;/tmp/RtmpOTdb2V/file6b912eee7e5f.bk&quot;</code></pre>
-<p>So, now the matrix is stored on disk and basically takes no memory. So, using FBMs would take 100 times less space to store the data.</p>
+<pre><code>## [1] &quot;C:\\Users\\Florian\\AppData\\Local\\Temp\\Rtmps7eEQV\\file1bbc9c85c43.bk&quot;</code></pre>
+<p>So, now the matrix is stored on disk and basically takes no memory.</p>
 <p>For omic data, computing PCA (or SVD) is sometimes useful to assess the structure in the data. Let’s do this.</p>
 <pre class="r"><code>system.time(
   svd &lt;- svd(scale(mat), nu = 10, nv = 10)
@@ -313,37 +417,36 @@ fbm$backingfile</code></pre>
 <p><img src="memory-mapping_files/figure-html/unnamed-chunk-3-1.png" width="65%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>system.time(
   svd2 &lt;- big_SVD(fbm, big_scale(), k = 10)
-)</code></pre>
-<pre><code>## (2)</code></pre>
+) # see big_randomSVD() for very large data</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.253   0.004   0.257</code></pre>
+##    0.74    0.12    0.88</code></pre>
 <pre class="r"><code>plot(svd2)</code></pre>
 <p><img src="memory-mapping_files/figure-html/unnamed-chunk-4-1.png" width="65%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(svd2, type = &quot;scores&quot;)</code></pre>
 <p><img src="memory-mapping_files/figure-html/unnamed-chunk-4-2.png" width="65%" style="display: block; margin: auto;" /></p>
-<p>The goal of memory-mapping is to not have all the data in memory. This force programmers to think more before implementing algorithms. This can lead to implementations that can be much faster than current R implementations. Moreover, data stored on disk is shared between processes so that parallelism in algorithms can be implemented more easily and efficiently, for example removing the need to copy the data.</p>
+<p>The goal of memory-mapping is to not have all the data in memory. This force programmers to think more before implementing algorithms. This can lead to implementations that can be much faster than current R implementations. Moreover, data stored on disk is shared between processes so that parallelism in algorithms can be implemented more easily and efficiently, for example removing the need to copy the data to each core.</p>
 </div>
 <div id="example-of-snp-data" class="section level3">
 <h3>Example of SNP data</h3>
-<p>Let’s use some 1000 Genomes data from <a href="https://github.com/gabraham/flashpca/tree/master/HapMap3">Gad Abraham’s GitHub repository</a> which have been filtered and quality-controled.</p>
+<p>Let’s use some data from <a href="https://github.com/gabraham/flashpca/tree/master/HapMap3">Gad Abraham’s GitHub repository</a> that have been filtered and quality-controled.</p>
 <pre class="r"><code>tmpfile &lt;- tempfile()
 base &lt;- paste0(
   &quot;https://github.com/gabraham/flashpca/raw/master/HapMap3/&quot;,
   &quot;1kg.ref.phase1_release_v3.20101123_thinned_autosomal_overlap&quot;)
 exts &lt;- c(&quot;.bed&quot;, &quot;.bim&quot;, &quot;.fam&quot;)
-purrr::map2_int(paste0(base, exts), paste0(tmpfile, exts), ~download.file(.x, .y))</code></pre>
-<pre><code>## [1] 0 0 0</code></pre>
-<p>First, we have to transform these data in PLINK format to an FBM. In package bigsnpr, function <code>snp_readBed</code> is provided to do just that. It is implemented with Rcpp, which makes it very fast. Package Rcpp makes easy to use C++ code in R and with R objects.</p>
+purrr::walk2(paste0(base, exts), paste0(tmpfile, exts), ~download.file(.x, .y))</code></pre>
+<p>First, we have to transform these data in PLINK format to an FBM. In package {bigsnpr}, function <code>snp_readBed()</code> is provided to do just that. It is implemented with Rcpp, which makes it very fast. Package {Rcpp} makes easy to use C++ code in R and with R objects.</p>
 <pre class="r"><code># https://github.com/privefl/bigsnpr
 library(bigsnpr)
-rdsfile &lt;- snp_readBed(paste0(tmpfile, &quot;.bed&quot;), tempfile())
-
-bigsnp &lt;- snp_attach(rdsfile)
+rdsfile &lt;- snp_readBed(paste0(tmpfile, &quot;.bed&quot;))</code></pre>
+<pre><code>## Warning in snp_readBed(paste0(tmpfile, &quot;.bed&quot;)): EOF of bedfile has not been reached.</code></pre>
+<pre class="r"><code>bigsnp &lt;- snp_attach(rdsfile)
 (G &lt;- bigsnp$genotypes)</code></pre>
 <pre><code>## A Filebacked Big Matrix of type &#39;code 256&#39; with 1092 rows and 14079 columns.</code></pre>
 <pre class="r"><code>object.size(G)</code></pre>
-<pre><code>## 656 bytes</code></pre>
-<pre class="r"><code>G.matrix &lt;- G[]
+<pre><code>## 688 bytes</code></pre>
+<pre class="r"><code>G[which(is.na(G[]))] &lt;- 0  # quick and dirty imputation
+G.matrix &lt;- G[]
 format(object.size(G.matrix), units = &quot;MB&quot;)</code></pre>
 <pre><code>## [1] &quot;117.3 Mb&quot;</code></pre>
 <p>For large SNP data, this format can save us a lot of memory.</p>
@@ -364,14 +467,12 @@ format(object.size(G.matrix), units = &quot;MB&quot;)</code></pre>
 <p><img src="memory-mapping_files/figure-html/unnamed-chunk-8-2.png" width="65%" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>plot(svd2, type = &quot;scores&quot;)</code></pre>
 <p><img src="memory-mapping_files/figure-html/unnamed-chunk-8-3.png" width="65%" style="display: block; margin: auto;" /></p>
-<p>And with smart algorithms, we can save a lot of computation time.</p>
 </div>
 </div>
 <div id="learn-more" class="section level2">
 <h2>Learn more</h2>
-<p>You can find vignettes and documentation of packages bigstatsr and bigsnpr in their GitHub repositories. In order to find more details about memory-mapping and packages bigstatsr and bigsnpr, please refer to the corresponding paper <span class="citation">(Privé, Aschard, and Blum 2017)</span>.</p>
-<p>You’ll see for example that when using memory-mapping, it’s possible to make a parallelized algorithm for computing partial Singular Value Decomposition that is lightning fast, using an already implemented algorithm in another R package.</p>
-<p><img src="https://github.com/privefl/paper-packages/raw/master/figures/benchmark-pca.png" width="65%" style="display: block; margin: auto;" /></p>
+<p>You can find vignettes and documentation of packages {bigstatsr} and {bigsnpr} in their GitHub repositories. In order to find more details about memory-mapping and these packages, please refer to the corresponding paper <span class="citation">(Privé et al. 2018)</span>.</p>
+<p>For instance, you will see that when using memory-mapping, it is possible to make a parallelized algorithm for computing partial Singular Value Decomposition that is lightning fast, using an already implemented algorithm in another R package.</p>
 <p>You’ll also see that it is possible to make a Genome-Wide Association Study (GWAS) on 500,000 individuals genotyped on more than 1,000,000 SNPs, thus analyzing more than 100 GB of compressed data on a single desktop computer.</p>
 </div>
 <div id="references" class="section level2 unnumbered">
@@ -380,14 +481,14 @@ format(object.size(G.matrix), units = &quot;MB&quot;)</code></pre>
 <div id="ref-barrett2012ncbi">
 <p>Barrett, Tanya, Stephen E Wilhite, Pierre Ledoux, Carlos Evangelista, Irene F Kim, Maxim Tomashevsky, Kimberly A Marshall, et al. 2012. “NCBI Geo: Archive for Functional Genomics Data Sets—update.” <em>Nucleic Acids Research</em> 41 (D1). Oxford University Press: D991–D995.</p>
 </div>
-<div id="ref-Bycroft166298">
-<p>Bycroft, Clare, Colin Freeman, Desislava Petkova, Gavin Band, Lloyd T Elliott, Kevin Sharp, Allan Motyer, et al. 2017. “Genome-Wide Genetic Data on  500,000 Uk Biobank Participants.” <em>BioRxiv</em>. Cold Spring Harbor Laboratory. doi:<a href="https://doi.org/10.1101/166298">10.1101/166298</a>.</p>
+<div id="ref-bycroft2017genome">
+<p>Bycroft, Clare, Colin Freeman, Desislava Petkova, Gavin Band, Lloyd T Elliott, Kevin Sharp, Allan Motyer, et al. 2018. “The Uk Biobank Resource with Deep Phenotyping and Genomic Data.” <em>Nature</em> 562 (7726). Nature Publishing Group: 203.</p>
 </div>
 <div id="ref-Kane2013">
 <p>Kane, Michael J, John W Emerson, and Stephen Weston. 2013. “Scalable Strategies for Computing with Massive Data.” <em>Journal of Statistical Software</em> 55 (14): 1–19. doi:<a href="https://doi.org/10.18637/jss.v055.i14">10.18637/jss.v055.i14</a>.</p>
 </div>
-<div id="ref-Prive190926">
-<p>Privé, Florian, Hugues Aschard, and Michael G. B. Blum. 2017. “Efficient Management and Analysis of Large-Scale Genome-Wide Data with Two R Packages: Bigstatsr and Bigsnpr.” <em>BioRxiv</em>. Cold Spring Harbor Laboratory. doi:<a href="https://doi.org/10.1101/190926">10.1101/190926</a>.</p>
+<div id="ref-prive2017efficient">
+<p>Privé, Florian, Hugues Aschard, Andrey Ziyatdinov, and Michael G B Blum. 2018. “Efficient Analysis of Large-Scale Genome-Wide Data with Two R Packages: Bigstatsr and Bigsnpr.” <em>Bioinformatics</em> 34 (16): 2781–7. doi:<a href="https://doi.org/10.1093/bioinformatics/bty185">10.1093/bioinformatics/bty185</a>.</p>
 </div>
 </div>
 </div>
