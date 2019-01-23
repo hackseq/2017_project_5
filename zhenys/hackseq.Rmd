@@ -1,31 +1,43 @@
 ---
-title:   'Authetic code in wet lab, bridging dry and wet parterners'
-author:  'Yisong Zhen'
-date:    '2017-10-26'
-bibliography: hackseq.bib
-csl: bioinformatics.csl
-output:  html_document
+title        :  'Authentic Code in the Wet Laboratory, Bridging Dry and Wet Partners'
+author       :  'Yisong Zhen'
+date         :  '2017-10-26'
+bibliography :  hackseq.bib
+csl          :  bioinformatics.csl
+output       :  html_document
 ---
 
 ## Introduction
 The following is the authentic code in my on-going project to find the key 
 players in controlling left-right (L-R) patterning during heart development[@Chen2010-uk].
 Raw data is from wanglab's recent work, including mRNA and lncRNA at different stages [@Touma2016-ym].
+In this tutorial, we would like to address the issue of how to analyse the public data in reproducible way
+and present and save the final result in Rmarkdown and share code with your colleagues.
 
-We have met problems in biomedicine field. The researcher's work is not fully 
+We have met numerous problems in biomedicine field. However, the researcher's work is not fully
 reproducible[@Prinz2011-nt;@Baker2015-tu]. 
-And data-sharing is also arguable in biomedicine researchers [@International_Consortium_of_Investigators_for_Fairness_in_Trial_Data_Sharing2016-vv].
-And source code is kept confidentially in individual labs.
+And data-sharing is also arguable in biomedicine researchers
+[@International_Consortium_of_Investigators_for_Fairness_in_Trial_Data_Sharing2016-vv].
+And source code is kept confidentially in individual labs due to some competitive reason or even private
+daul. This unhealthy behavior impede the advance in biomedical research and consume huge amount of
+taxpayers' money.
+
+In the present working flow,
 
 - Using Github to collaborate with researchers over the world in a big project
-- Writing down Rmarkdown memo to share the analysis protocol with biologists and perform reproducible research,
-  which is already achived in other sciences [].
+- Writing down Rmarkdown memo to share the analysis protocol with biologists and
+  perform reproducible research,
+  which is already archived in other sciences [].
 - Adopting Clean code style to facilitate the code maintenance in the future studies
 - Asking an interesting Question first and then analyze the raw data step by step, which avoid p-hacking.
 
 
-My biological question is, what are the novel determinants involved in LR patterning during heart development? To tackle
-this problem using the public data, I will perform post Quality control (post-QC) procedure and then 
+My biological question is, what are the novel determinants involved in LR patterning during heart development?
+To tackle this problem using the public data, I will perform post quality control (post-QC) procedure and then
+perform advanced methods to find the downstream targets, which display left-right specific expression pattern.
+This scenario is a traditional strategy to pinpoint the candidates involved in certain biological pathway. In
+general, we use the animal model, in our case, it is mouse, to infer the LR specific genes. If possible, we
+explore the same information using human samples or human population genetics data.
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set( 
@@ -45,6 +57,7 @@ pkgs <- c( 'tidyverse','Rsubread','org.Mm.eg.db','edgeR',
          )
 
 load.lib <- lapply(pkgs, require, character.only = TRUE)
+
 ```
 
 ```{r analysis design, include = TRUE}
@@ -72,8 +85,9 @@ graph <-
 render_graph(graph)
 ```
 
-this is my own setting in our computation server. I have configured the path to 
-the required reference genomes and corresponding annotation files.
+this is my own setting in our high performace cluster(HPC-fuwai). I have configured the path to
+the required reference genomes and corresponding annotation files. I used the miniconda to manage
+the software's version and local preference control.
 
 ```{r parameter setting, include = FALSE}
 
@@ -114,13 +128,17 @@ GSE85728.files     <- list.files( raw.data.path, pattern = 'SRR.*.fastq$')
 read.1.files       <- GSE85728.files[grep('_1',GSE85728.files)]
 read.2.files       <- GSE85728.files[grep('_2',GSE85728.files)]
 
+"
+I filtered out the sample names from raw sequencing data
+"
+
 GSE85728.output.filenames  <- basename(read.1.files) %>% 
                               sub(pattern = '_1.fastq', replacement = '') %>%
                               paste0(wangyb.output.dir,'/', . ,'.bam')
 
 dir.create(GSE85728.output.dir, showWarnings = FALSE, recursive = TRUE)
 setwd(rsubread.index.lib)
-base.string          <-  'mm10'
+base.string           <-  'mm10'
 
 align( index          = base.string, 
        readfile1      = read.1.files, 
@@ -185,11 +203,13 @@ I extract the gene alone from then annotation file.
 Gencode is a public project to annotate all genes in
 human and mouse
 "
+
 GRCm38.extra.annot      <- gencode.GRCm38.mouse %$% 
                            {data.frame( ensembl.id = gene_id, 
                                           gene       = type, 
                                           gene_type  = gene_type)}%>%
                            filter(gene == 'gene') %>% unique()
+
 
 "
 this function aims to get normrlized and log transformed gene 
@@ -226,17 +246,17 @@ GSE85728.extra.annot     <- GSE85728.rsubread.gencode %$%
                             inner_join( GRCm38.extra.annot, 
                                         by = c('GeneID' = 'ensembl.id')) %>%
                             mutate(GeneID = as.character(GeneID))
-apply.mean.func    <- function(df.matrix, col_nums) {
-                          apply(df.matrix[,col_nums],1, mean)
-                      }
-comparision.list   <- list( LVP0 = 1:3,   LVP3 = 4:6,
-                            LVP7 = 7:9,   RVP0 = 10:12,
-                            RVP3 = 13:15, RVP7 = 16:17 )
-time.point.rpkm    <- map(comparision.list, apply.mean.func, df.matrix = GSE85728.rpkm) %>%
-                      as.data.frame() %>% mutate(GeneName = GRCm38.genenames) %>%
-                      mutate(EnsemblID = GSE85728.rsubread.gencode$annotation$GeneID ) %>%
-                      inner_join(GSE85728.extra.annot, by = c('EnsemblID' = 'GeneID')) %>%
-                      as_tibble()
+apply.mean.func          <- function(df.matrix, col_nums) {
+                                apply(df.matrix[,col_nums],1, mean)
+                            }
+comparision.list         <- list( LVP0 = 1:3,   LVP3 = 4:6,
+                                  LVP7 = 7:9,   RVP0 = 10:12,
+                                  RVP3 = 13:15, RVP7 = 16:17 )
+time.point.rpkm          <- map(comparision.list, apply.mean.func, df.matrix = GSE85728.rpkm) %>%
+                            as.data.frame() %>% mutate(GeneName = GRCm38.genenames) %>%
+                            mutate(EnsemblID = GSE85728.rsubread.gencode$annotation$GeneID ) %>%
+                            inner_join(GSE85728.extra.annot, by = c('EnsemblID' = 'GeneID')) %>%
+                            as_tibble()
 
 ```
 
@@ -245,10 +265,10 @@ graph.text.size    <- 8
 left.right.markers <- list()
 QC.genename        <- 'Myl2'
 #---
-# I always, like in biological experiments, use the postive 
+# I always, like in biological experiments, use the positive
 # control to validate my results. In the public data, I prefer
 # to choose the known pathway markers to confirm that the data
-# is solid compared with the established observations
+# is valid compared with the established observations
 #---
 data.QC.checker <- time.point.rpkm %>% 
                    filter(GeneName == QC.genename) %>%
@@ -276,9 +296,9 @@ data.QC.checker <- time.point.rpkm %>%
 # PCA analysis for GSE85728 (RNA-seq), data validation check
 #---
 
-tissue.groups <- sample.names %>%
-                 sub('_.*$', '', perl = F, .) %>% as.factor() %>%
-                 data.frame(tissueGroups = .)
+tissue.groups     <- sample.names %>%
+                     sub('_.*$', '', perl = F, .) %>% as.factor() %>%
+                     data.frame(tissueGroups = .)
 GSE85728.vsd.data <- GSE85728.rsubread.gencode %$% counts %>% 
                      DESeqDataSetFromMatrix( countData = ., 
                                              colData = tissue.groups, 
@@ -328,7 +348,7 @@ scree.plot.ggplot <- {GSE85728.vsd.PCA$sdev^2} %>%
                                          labels = as.character(c(1:pca.no), 
                                          limits = as.character(c(1:pca.no)))) +
                      geom_point(aes(x = pca, y = variance), size = 3) +
-                     geom_line(aes(x = pca, y = variance), size = 0.8) +
+                     geom_line(aes(x  = pca, y = variance), size = 0.8) +
                      scale_linetype_discrete() +
                      theme(legend.position = 'none') +
                      theme_classic() +
@@ -396,7 +416,17 @@ GSE85728.final.QC.figure <- ggdraw() +
 session_info()
 ```
 ## Discussion
+From my limited knowledge, most bioinformaticians in small research groups are self-learners with biological
+background. Usually,they lack of formal training in the methodology of software engineering
+and quantitative analysis skills.
+Their routine focus on calling the well-maintained packages and running the pipelines to analyse the small
+data. Like Roger Peng's saying, they will experience the three stages in their coding style,
+which includes snippets, function and package.
+
+
 ## References
+
+
 ```{r reference, include = FALSE}
 knitr::write_bib()
 ```
