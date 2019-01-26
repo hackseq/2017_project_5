@@ -42,7 +42,7 @@ snpMetaData %>% str()
 
 ## Filter/edit datasets
 
-Now lets filter our datasets, cause there is information in them we do not really need for our analysis. 
+Now lets filter our datasets, cause there is information in them we do not need for our analysis. 
 Specifically, we dont need extra patients which we do not have expression data for. 
 The V1 column of the snpData contains the name for each patient. Of course, we would only like to keep the NA18XXX patients which we have expression data for.
 We will be using the subset base function. 
